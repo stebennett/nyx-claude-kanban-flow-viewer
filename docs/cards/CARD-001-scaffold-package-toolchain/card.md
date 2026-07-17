@@ -4,12 +4,12 @@ type: task
 layer: infra
 reqs: [REQ-006, REQ-007, REQ-036]
 title: Scaffold the TypeScript package and toolchain
-status: slice
-phase: slice
-right_sized: ""
+status: design
+phase: design
+right_sized: true
 depends_on: []
-branch: ""
-worktree: ""
+branch: task/001-scaffold-package-toolchain-design
+worktree: .worktrees/CARD-001-design
 design_pr_url: ""
 pr_urls: []
 split_slices: 0
@@ -21,7 +21,7 @@ reworks:
   split: 0
   deliver: 0
 review_lenses_failed: []
-estimated_lines: 406
+estimated_lines: 360
 actual_lines: ""
 started: 2026-07-17
 delivered: ""
