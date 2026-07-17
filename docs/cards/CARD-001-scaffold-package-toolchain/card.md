@@ -4,8 +4,8 @@ type: task
 layer: infra
 reqs: [REQ-006, REQ-007, REQ-036]
 title: Scaffold the TypeScript package and toolchain
-status: backlog
-phase: backlog
+status: slice
+phase: slice
 right_sized: ""
 depends_on: []
 branch: ""
@@ -23,7 +23,7 @@ reworks:
 review_lenses_failed: []
 estimated_lines: 406
 actual_lines: ""
-started: ""
+started: 2026-07-17
 delivered: ""
 created: 2026-07-17
 ---
