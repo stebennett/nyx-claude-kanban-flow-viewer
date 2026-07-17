@@ -27,7 +27,7 @@ _last rendered: 2026-07-17_
 ## Slice
 
 ## Design
-- CARD-001 — Scaffold the TypeScript package and toolchain · design · task/001-scaffold-package-toolchain-design [M1]
+- CARD-001 — Scaffold the TypeScript package and toolchain · design · task/001-scaffold-package-toolchain-design [M1] · design PR #1 open
 
 ## Implement
 
