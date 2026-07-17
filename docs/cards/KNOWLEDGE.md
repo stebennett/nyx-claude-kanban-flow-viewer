@@ -14,6 +14,9 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
 - [CARD-001] Coverage measures the core logic layer only — `src/server/**/*.ts` minus entry
   points (`src/server/index.ts`), which are the I/O edge and are proven by the build/smoke step
   instead. Threshold 90% (lines/functions/branches/statements).
+- [CARD-001] npm's packlist honored `files: ["dist"]` directly despite `dist/` being gitignored — no
+  `!dist` negation or `.npmignore` was needed with npm 11.3.0. Re-verify with `npm pack --dry-run` if
+  the npm version pin ever changes.
 
 ## Gotchas
 
@@ -36,5 +39,20 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
 - [CARD-001] Leaf tsconfigs use `include`, not `files: []`, so TS18003 ("No inputs were found") CAN
   fire on them — unlike the solution root, where files/references suppress it. `tsc -b` over a leaf
   config whose include dir is still empty errors rather than passing.
+- [CARD-001] `tsc -b` + composite project references: a leaf tsconfig's `include` spanning multiple
+  top-level dirs (e.g. `src/server/**/*.ts` + `test/**/*.ts`) with no explicit `rootDir` makes
+  `tsc -b` infer the common ancestor as rootDir, nesting build output
+  (`dist/server/src/server/index.js` instead of `dist/server/index.js`) and breaking any fixed `bin`
+  path. Fix: pin `rootDir` explicitly and keep cross-cutting test files in their own project.
+- [CARD-001] `tsc -b --noEmit` at a solution root errors TS6310 ("Referenced project may not disable
+  emit") the moment any project has a formal `references` edge to another composite project — the CLI
+  `--noEmit` flag propagates to referenced projects too. Avoid formal cross-project `references` for
+  files that only need type info from another project; give them a self-contained `include` list.
+- [CARD-001] `tsc -b` trusts stale `.tsbuildinfo` and silently no-ops (exit 0, nothing emitted) if
+  `dist/` is deleted without also clearing `*.tsbuildinfo` — it does not always re-verify declared
+  outputs exist on disk. A fresh clone never hits this (`.tsbuildinfo` is gitignored), but CI caching
+  of build state without also caching `dist/`, or a developer's `rm -rf dist`, will. Fixed by adding
+  `--force` to `build:server`; **CARD-002 must not cache `*.tsbuildinfo` across CI runs without also
+  caching `dist/`**.
 
 ## Glossary
