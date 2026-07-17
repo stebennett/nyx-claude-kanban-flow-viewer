@@ -10,7 +10,7 @@ right_sized: true
 depends_on: []
 branch: task/001-scaffold-package-toolchain-design
 worktree: .worktrees/CARD-001-design
-design_pr_url: ""
+design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/1
 pr_urls: []
 split_slices: 0
 adrs: [ADR-0001, ADR-0002, ADR-0003]
