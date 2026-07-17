@@ -87,7 +87,8 @@ Snapshot shape:
 
 Card model: `id`, `title`, `status`, `phase`, `type`, `layer`, `dependsOn`,
 `designPrUrl`, `prUrls`, `splitSlices`, `reworks` (per producer), `estimatedLines`,
-`actualLines`, `criteria: { done, total }` (counted from `- [ ]` / `- [x]` in the body),
+`actualLines`, `criteria: { done, total }` (counted from `- [ ]` / `- [x]` items under the
+`## Acceptance criteria` heading only),
 `blocker` (when present), `created`/`started`/`delivered`, `dirName`.
 
 Parsing uses gray-matter for frontmatter. PR merged-state is **inferred, not queried**:
@@ -96,8 +97,8 @@ entries in `pr_urls` displays "slice k/N".
 
 ## UI
 
-**Header:** project name · WIP indicator ("WIP 2/3", amber at the limit, computed as
-cards in flight vs `wip_limit`) · connection dot (live / reconnecting).
+**Header:** project name · WIP indicator ("WIP 2/3", amber at the limit; "in flight" =
+status in slice/design/implement/test/review/deliver, or blocked, vs `wip_limit`) · connection dot (live / reconnecting).
 
 **Board:** eight flow columns — Backlog, Slice, Design, Implement, Test, Review,
 Deliver, Done.
