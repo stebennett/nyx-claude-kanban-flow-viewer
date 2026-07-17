@@ -25,7 +25,7 @@ _last rendered: 2026-07-17_
 - CARD-018 — CLI flags and startup validation · backlog [M2]
 
 ## Slice
-- CARD-001 — Scaffold the TypeScript package and toolchain · slice [M1]
+- CARD-001 — Scaffold the TypeScript package and toolchain · slice [M1] · checking slice
 
 ## Design
 
