@@ -6,10 +6,20 @@
   "engines": {
     "node": ">=20"
   },
+  "bin": {
+    "kanban-flow-viewer": "dist/server/index.js"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
+    "lint": "eslint .",
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "build:ui": "vite build",
+    "build:server": "tsc -b tsconfig.server.json",
+    "build": "npm run build:ui && npm run build:server"
   },
   "dependencies": {},
   "devDependencies": {
