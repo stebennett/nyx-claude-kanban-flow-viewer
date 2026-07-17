@@ -6,6 +6,9 @@
   "engines": {
     "node": ">=20"
   },
+  "scripts": {
+    "typecheck": "tsc -b --noEmit"
+  },
   "dependencies": {},
   "devDependencies": {
     "typescript": "^5.9.0",
