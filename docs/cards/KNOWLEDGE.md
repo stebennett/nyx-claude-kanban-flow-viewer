@@ -27,5 +27,14 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
 - [CARD-001] `dist/` is gitignored but shipped via package.json `files` — npm's packlist has
   historically applied .gitignore inside `files` entries. Never trust it by inspection: verify
   with `npm pack --dry-run` that dist/server and dist/ui appear in the tarball.
+- [CARD-001] A task's verification step can only target files that exist by that task. Scaffolding
+  cards invert normal TDD order (runner before tests), so gate-mutation checks must be sequenced
+  after the files they mutate land — or use throwaway stubs.
+- [CARD-001] @types/react 19 removed the global `JSX` namespace — component return types are
+  `React.JSX.Element`, not `JSX.Element`. Bare `JSX.Element` fails the typecheck gate under the
+  react-jsx transform.
+- [CARD-001] Leaf tsconfigs use `include`, not `files: []`, so TS18003 ("No inputs were found") CAN
+  fire on them — unlike the solution root, where files/references suppress it. `tsc -b` over a leaf
+  config whose include dir is still empty errors rather than passing.
 
 ## Glossary

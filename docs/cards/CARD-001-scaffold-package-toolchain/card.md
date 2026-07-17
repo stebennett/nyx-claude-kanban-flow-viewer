@@ -13,7 +13,7 @@ worktree: .worktrees/CARD-001-design
 design_pr_url: ""
 pr_urls: []
 split_slices: 0
-adrs: []
+adrs: [ADR-0001, ADR-0002, ADR-0003]
 reworks:
   slice: 0
   design: 0
