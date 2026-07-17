@@ -29,9 +29,9 @@ _last rendered: 2026-07-17_
 ## Design
 
 ## Implement
-- CARD-001 — Scaffold the TypeScript package and toolchain · implement · task/001-scaffold-package-toolchain [M1]
 
 ## Test
+- CARD-001 — Scaffold the TypeScript package and toolchain · test · task/001-scaffold-package-toolchain [M1]
 
 ## Review
 

@@ -4,8 +4,8 @@ type: task
 layer: infra
 reqs: [REQ-006, REQ-007, REQ-036]
 title: Scaffold the TypeScript package and toolchain
-status: implement
-phase: implement
+status: test
+phase: test
 right_sized: true
 depends_on: []
 branch: task/001-scaffold-package-toolchain
