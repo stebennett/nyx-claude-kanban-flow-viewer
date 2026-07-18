@@ -31,7 +31,7 @@ describe('ci workflow contract', () => {
     expect(workflow.on).toHaveProperty('workflow_call');
   });
 
-  it('runs the four gates in order after npm ci, and only calls the typecheck script', () => {
+  it('runs the four gates in order after npm ci (build before test — test depends on a built project), and only calls the typecheck script', () => {
     const steps = workflow.jobs?.['gates']?.steps ?? [];
     const runs = steps.map((step) => step.run).filter((run): run is string => Boolean(run));
 
@@ -44,12 +44,15 @@ describe('ci workflow contract', () => {
     const ciIndex = runs.indexOf('npm ci');
     const lintIndex = runs.indexOf('npm run lint');
     const typecheckIndex = runs.indexOf('npm run typecheck');
-    const testIndex = runs.indexOf('npm test');
     const buildIndex = runs.indexOf('npm run build');
+    const testIndex = runs.indexOf('npm test');
     expect(ciIndex).toBeLessThan(lintIndex);
     expect(lintIndex).toBeLessThan(typecheckIndex);
-    expect(typecheckIndex).toBeLessThan(testIndex);
-    expect(testIndex).toBeLessThan(buildIndex);
+    // build precedes test: test/packaging.test.ts shells out to `npm run build`, so the test
+    // gate depends on the build gate — build must run first for each gate to independently
+    // attribute a failure to the correct CI step.
+    expect(typecheckIndex).toBeLessThan(buildIndex);
+    expect(buildIndex).toBeLessThan(testIndex);
 
     // ADR-0003: the typecheck gate must go through the npm script, never raw tsc.
     for (const run of runs) {
