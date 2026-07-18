@@ -10,7 +10,7 @@ right_sized: true
 depends_on: [CARD-019]
 branch: task/020-record-phase-doc-presence-design
 worktree: .worktrees/CARD-020-design
-design_pr_url: ""
+design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/20
 pr_urls: []
 split_slices: 0
 adrs: []
