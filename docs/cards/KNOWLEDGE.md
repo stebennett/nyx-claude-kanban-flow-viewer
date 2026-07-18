@@ -56,6 +56,13 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   interpolation trap is not engaged. Check-doc matching covers the variants `deliver-check.md`,
   `deliver-check-design.md`, `deliver-check-<k>.md`. `<phase>.md` is an EXACT match, so `deliver-check.md`
   sets `deliver.check` true but leaves `deliver.phase` false.
+- [CARD-020] A property test over a multi-branch formula (e.g. `hasCheckDoc`'s exact-OR-prefix match) should
+  derive its **expected** value from the arbitrary's own generation metadata/tags — as CARD-019's
+  `countCriteria` property does (expectedDone/expectedNotDone come from which tagged-line variant fast-check
+  picked) — NOT by retyping the implementation's exact boolean expression a second time. CARD-020's property
+  test duplicates the impl expression; review confirmed it still catches mutations (it's typed independently,
+  not a call-through), but the tag-based style is strictly more robust against a shared authoring error in the
+  design's prescribed formula. Prefer tag-based ground truth for the next multi-branch property test.
 
 ## Gotchas
 
@@ -191,5 +198,14 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   server module (transitively gray-matter-adjacent) into the browser bundle. **CARD-011 must either give
   the constant a UI-reachable home (a shared boundary-neutral module) or re-declare the flow order in the
   UI with an accepted duplication** — do not import `PHASE_NAMES` straight from `src/server` into `src/ui`.
-
-## Glossary
+- [CARD-020] `new Set(entries ?? [])` — the `?? []` fallback is **behaviorally inert**: `new Set(undefined)`
+  already returns an empty Set (V8 native tolerance), so a test asserting identical output for `undefined`
+  vs `[]` entries does NOT prove the `??` branch is load-bearing (verified in review: removing `?? []`
+  entirely left all 36 tests green). Keep the two call shapes as API-surface tests, but don't claim the
+  fallback is mutation-covered. If a future coercion genuinely must distinguish undefined from empty, don't
+  lean on this pattern to prove it.
+- [CARD-020→CARD-011] `PhaseDocPresence.phase` (boolean, "does `<phase>.md` exist") and `CardModel.phase`
+  (string, the card's current flow phase) share the bare name `phase` ~10 lines apart in `card-model.ts`.
+  CARD-011, consuming `phaseDocsPresent` for column inference, should avoid a local `const phase = …` that
+  shadows/reads as the wrong one (review flagged the overload as advisory; a rename to `{ doc, check }` was
+  deferred as it wasn't rework-worthy).
