@@ -32,9 +32,9 @@ _last rendered: 2026-07-18_
 ## Test
 
 ## Review
-- CARD-019 — Parse card.md frontmatter and body into the card model · review · task/019-parse-card-frontmatter-body [M2] · re-reviewing tests lens · ⚠ 601 lines > size_limit (split after panel)
 
 ## Deliver
+- CARD-019 — Parse card.md frontmatter and body into the card model · deliver · task/019-parse-card-frontmatter-body [M2] · PR #9 open (oversized, split refused)
 
 ## Blocked
 - CARD-002 — Run lint, typecheck, tests and build on every pull request · deliver · task/002-ci-pull-request-gates [M1] · 🛑 BLOCKED: App lacks Workflows:write to push ci.yml (grant + re-approve)

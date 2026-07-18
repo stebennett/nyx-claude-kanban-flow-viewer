@@ -157,5 +157,10 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   gap the driver must fix on GitHub.com (add the Workflows permission, re-approve the installation) —
   **never fall back to personal auth** (repo identity doctrine). **Blocks CARD-002 delivery and will
   block CARD-003** (release workflow) identically until granted.
+- [CARD-019] A parser + its exhaustive test suite are coverage-coupled and can alone exceed `size_limit`
+  before any other file: `pr-splitter`'s refusal here was independently reproducible (`git diff
+  --numstat` → the 542-line pair busts the 500 cap on its own) and is correctly **advisory**, not a
+  park — `DLV-SIZE` on an already-split-and-refused card verdicts `pass` with the breach recorded, since
+  we never split a split.
 
 ## Glossary
