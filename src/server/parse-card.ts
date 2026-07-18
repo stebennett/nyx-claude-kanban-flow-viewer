@@ -22,6 +22,10 @@ function asNumberOrNull(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
+function asOptionalNonEmptyString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
 function asReworks(value: unknown): ReworkCounts {
   const source = typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
   return {
@@ -56,6 +60,7 @@ export function parseCard(raw: string, options: ParseCardOptions): CardModel {
     criteria: { done: 0, total: 0 } satisfies CriteriaCount,
     why: '',
     notes: '',
+    blocker: asOptionalNonEmptyString(data.blocker),
     created: asString(data.created),
     started: asString(data.started),
     delivered: asString(data.delivered),

@@ -54,4 +54,107 @@ describe('parseCard', () => {
     expect(model.actualLines).toBe(280);
     expect(model.dirName).toBe('CARD-042-sample-card');
   });
+
+  it('applies typed defaults for missing optional frontmatter fields and never throws', () => {
+    const MINIMAL_FIXTURE = `---
+id: CARD-099
+title: Minimal card
+status: backlog
+---
+
+Body text without any known sections.
+`;
+
+    expect(() => parseCard(MINIMAL_FIXTURE, { dirName: 'CARD-099-minimal' })).not.toThrow();
+
+    const model = parseCard(MINIMAL_FIXTURE, { dirName: 'CARD-099-minimal' });
+
+    expect(model.dependsOn).toEqual([]);
+    expect(model.prUrls).toEqual([]);
+    expect(model.adrs).toEqual([]);
+    expect(model.splitSlices).toBe(0);
+    expect(model.reworks).toEqual({ slice: 0, design: 0, implement: 0, split: 0, deliver: 0 });
+    expect(model.estimatedLines).toBeNull();
+    expect(model.actualLines).toBeNull();
+    expect(model.criteria).toEqual({ done: 0, total: 0 });
+    expect(model.why).toBe('');
+    expect(model.notes).toBe('');
+    expect(model.branch).toBe('');
+    expect(model.worktree).toBe('');
+    expect(model.designPrUrl).toBe('');
+    expect(model.created).toBe('');
+    expect(model.started).toBe('');
+    expect(model.delivered).toBe('');
+  });
+
+  it('fills only the missing rework producers with 0 when reworks is partial', () => {
+    const PARTIAL_REWORKS_FIXTURE = `---
+id: CARD-050
+title: Partial reworks card
+status: implement
+reworks:
+  implement: 3
+---
+`;
+
+    const model = parseCard(PARTIAL_REWORKS_FIXTURE, { dirName: 'CARD-050-partial' });
+
+    expect(model.reworks).toEqual({ slice: 0, design: 0, implement: 3, split: 0, deliver: 0 });
+  });
+
+  it('coerces an empty-string estimated_lines/actual_lines to null', () => {
+    const EMPTY_LINES_FIXTURE = `---
+id: CARD-051
+title: Empty lines card
+status: implement
+estimated_lines: ""
+actual_lines: ""
+---
+`;
+
+    const model = parseCard(EMPTY_LINES_FIXTURE, { dirName: 'CARD-051-empty-lines' });
+
+    expect(model.estimatedLines).toBeNull();
+    expect(model.actualLines).toBeNull();
+  });
+
+  it('sets blocker only when the frontmatter value is a non-empty string', () => {
+    const BLOCKED_FIXTURE = `---
+id: CARD-052
+title: Blocked card
+status: implement
+blocker: needs API key
+---
+`;
+    const UNBLOCKED_FIXTURE = `---
+id: CARD-053
+title: Unblocked card
+status: implement
+---
+`;
+    const EMPTY_BLOCKER_FIXTURE = `---
+id: CARD-054
+title: Empty blocker card
+status: implement
+blocker: ""
+---
+`;
+
+    expect(parseCard(BLOCKED_FIXTURE, { dirName: 'CARD-052' }).blocker).toBe('needs API key');
+    expect(parseCard(UNBLOCKED_FIXTURE, { dirName: 'CARD-053' }).blocker).toBeUndefined();
+    expect(parseCard(EMPTY_BLOCKER_FIXTURE, { dirName: 'CARD-054' }).blocker).toBeUndefined();
+  });
+
+  it('passes an unrecognized status value through unchanged', () => {
+    const UNKNOWN_STATUS_FIXTURE = `---
+id: CARD-055
+title: Unknown status card
+status: frobnicate
+---
+`;
+
+    const model = parseCard(UNKNOWN_STATUS_FIXTURE, { dirName: 'CARD-055' });
+
+    expect(model.status).toBe('frobnicate');
+  });
 });
