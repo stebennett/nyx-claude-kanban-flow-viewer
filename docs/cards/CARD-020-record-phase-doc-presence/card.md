@@ -4,8 +4,8 @@ type: task
 layer: domain
 reqs: [REQ-025]
 title: Record phase-doc presence in the card model
-status: test
-phase: test
+status: review
+phase: review
 right_sized: true
 depends_on: [CARD-019]
 branch: task/020-record-phase-doc-presence
