@@ -25,7 +25,7 @@ _last rendered: 2026-07-18_
 ## Slice
 
 ## Design
-- CARD-020 — Record phase-doc presence in the card model · design · task/020-record-phase-doc-presence-design [M2]
+- CARD-020 — Record phase-doc presence in the card model · design · task/020-record-phase-doc-presence-design [M2] · design PR #20 open
 
 ## Implement
 

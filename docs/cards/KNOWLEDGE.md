@@ -43,6 +43,19 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
 - [CARD-002] CI caches only `~/.npm` via `actions/setup-node` `cache: npm` (keyed on package-lock.json);
   it never adds `actions/cache` for `dist/` or `*.tsbuildinfo`. `build:server`'s `--force` is the belt,
   no-build-state-cache is the suspenders against the stale-`.tsbuildinfo` false green (ADR-0003).
+- [CARD-020] The canonical phase-doc identity — `PHASE_NAMES = ['slice','design','implement','test',
+  'review','deliver']` (flow order) plus the `PhaseName`/`PhaseDocPresence`/`PhaseDocsPresent` types —
+  lives in the **dependency-free `card-model.ts`**, NOT in `parse-card.ts`. This refines CARD-004's
+  "defined once in the parser" note: `parse-card.ts` imports gray-matter (a server-only runtime dep),
+  so CARD-011 (UI blocked-flag rendering) reusing the constant from there would bundle gray-matter into
+  the browser build. The derivation function `derivePhaseDocsPresent(entries)` stays in `parse-card.ts`;
+  CARD-011/CARD-018 reuse the constant + types from `card-model.ts`.
+- [CARD-020] The phase-doc presence scan matches filenames with plain string methods
+  (`name === '<phase>.md'`; check docs `name === '<phase>-check.md'` OR `name.startsWith('<phase>-check-')
+  && name.endsWith('.md')`), NOT via `extractSection`/RegExp — so the CARD-019 unescaped-heading-
+  interpolation trap is not engaged. Check-doc matching covers the variants `deliver-check.md`,
+  `deliver-check-design.md`, `deliver-check-<k>.md`. `<phase>.md` is an EXACT match, so `deliver-check.md`
+  sets `deliver.check` true but leaves `deliver.phase` false.
 
 ## Gotchas
 
@@ -171,5 +184,12 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   for /retro): `asDateString` shifts the day for a timestamp carrying a time+offset; `countCriteria`
   counts a `- [x]` inside a fenced code block; `asNonNegInt`/`asNumberOrNull` don't enforce their
   name's integer/non-negative constraint.
+- [CARD-020→CARD-011] `PHASE_NAMES` (and the phase-doc presence types) live in `src/server/card-model.ts`
+  — the **server** side of the load-bearing `src/server`↔`src/ui` project boundary (KNOWLEDGE [CARD-001]).
+  CARD-011 (UI blocked-flag rendering) needs flow order to infer a blocked card's column from
+  `phaseDocsPresent`, but importing `card-model.ts` from `src/ui` would cross that boundary and pull a
+  server module (transitively gray-matter-adjacent) into the browser bundle. **CARD-011 must either give
+  the constant a UI-reachable home (a shared boundary-neutral module) or re-declare the flow order in the
+  UI with an accepted duplication** — do not import `PHASE_NAMES` straight from `src/server` into `src/ui`.
 
 ## Glossary
