@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractSection, parseCard } from './parse-card.js';
+import { countCriteria, extractSection, parseCard } from './parse-card.js';
 
 const FULL_FIXTURE = `---
 id: CARD-042
@@ -224,5 +224,91 @@ These are the exact notes for the card.
     expect(model.notes).toBe('These are the exact notes for the card.');
     expect(model.why).not.toContain('##');
     expect(model.notes).not.toContain('##');
+  });
+});
+
+describe('countCriteria', () => {
+  it('counts done/total from checkbox lines in the given section text', () => {
+    expect(countCriteria('- [x] one\n- [ ] two\n- [ ] three')).toEqual({ done: 1, total: 3 });
+  });
+
+  it('counts an uppercase [X] as done', () => {
+    expect(countCriteria('- [X] one\n- [ ] two')).toEqual({ done: 1, total: 2 });
+  });
+
+  it('returns {done:0,total:0} for an empty section', () => {
+    expect(countCriteria('')).toEqual({ done: 0, total: 0 });
+  });
+});
+
+describe('parseCard criteria counting scoped to heading (AC-2)', () => {
+  it('counts only checkboxes under ## Acceptance criteria, ignoring stray checkboxes in Why/Notes', () => {
+    // Non-vacuous proof: 2 done + 3 not-done under Acceptance criteria = {done:2,total:5}.
+    // A stray "- [x]" sits in *both* Why and Notes, outside the heading's scope. If heading
+    // scoping were removed, those 2 stray checked lines would be swept in too, changing the
+    // result to {done:4,total:7} (2 in-section done + 2 stray done; 5 in-section + 2 stray
+    // total) — proving the heading boundary, not just the checkbox regex, does the work.
+    const SCOPED_CRITERIA_FIXTURE = `---
+id: CARD-058
+title: Scoped criteria card
+status: implement
+---
+
+## Why
+Some why text.
+- [x] stray checked item in Why (must not be counted)
+
+## Acceptance criteria
+- [x] criterion one
+- [x] criterion two
+- [ ] criterion three
+- [ ] criterion four
+- [ ] criterion five
+
+## Notes
+Some notes text.
+- [x] stray checked item in Notes (must not be counted)
+`;
+
+    const model = parseCard(SCOPED_CRITERIA_FIXTURE, { dirName: 'CARD-058' });
+
+    expect(model.criteria).toEqual({ done: 2, total: 5 });
+  });
+
+  it('returns {done:0,total:0} when the Acceptance criteria heading is absent', () => {
+    const NO_CRITERIA_FIXTURE = `---
+id: CARD-059
+title: No criteria heading card
+status: implement
+---
+
+## Why
+Some why text with no criteria heading at all.
+`;
+
+    const model = parseCard(NO_CRITERIA_FIXTURE, { dirName: 'CARD-059' });
+
+    expect(model.criteria).toEqual({ done: 0, total: 0 });
+  });
+
+  it('does not end the section at a ### sub-heading, so checkboxes after it still count', () => {
+    const SUBHEADING_CRITERIA_FIXTURE = `---
+id: CARD-060
+title: Sub-heading criteria card
+status: implement
+---
+
+## Acceptance criteria
+- [x] before the sub-heading
+### a sub-heading
+- [ ] after the sub-heading, still in scope
+
+## Notes
+n/a
+`;
+
+    const model = parseCard(SUBHEADING_CRITERIA_FIXTURE, { dirName: 'CARD-060' });
+
+    expect(model.criteria).toEqual({ done: 1, total: 2 });
   });
 });

@@ -71,6 +71,29 @@ export function extractSection(content: string, heading: string): string {
   return bodyLines.join('\n').trim();
 }
 
+const DONE_CHECKBOX_PATTERN = /^\s*-\s\[[xX]\]/;
+const UNCHECKED_CHECKBOX_PATTERN = /^\s*-\s\[ \]/;
+
+/**
+ * Counts `- [ ]` / `- [x]` checkbox lines in the given section text (typically the
+ * output of extractSection). `total` is done + not-done; other lines are ignored.
+ */
+export function countCriteria(sectionText: string): CriteriaCount {
+  const lines = sectionText.split('\n');
+  let done = 0;
+  let notDone = 0;
+
+  for (const line of lines) {
+    if (DONE_CHECKBOX_PATTERN.test(line)) {
+      done++;
+    } else if (UNCHECKED_CHECKBOX_PATTERN.test(line)) {
+      notDone++;
+    }
+  }
+
+  return { done, total: done + notDone };
+}
+
 export function parseCard(raw: string, options: ParseCardOptions): CardModel {
   const { data, content } = matter(raw);
 
@@ -91,7 +114,7 @@ export function parseCard(raw: string, options: ParseCardOptions): CardModel {
     reworks: asReworks(data.reworks),
     estimatedLines: asNumberOrNull(data.estimated_lines),
     actualLines: asNumberOrNull(data.actual_lines),
-    criteria: { done: 0, total: 0 } satisfies CriteriaCount,
+    criteria: countCriteria(extractSection(content, 'Acceptance criteria')),
     why: extractSection(content, 'Why'),
     notes: extractSection(content, 'Notes'),
     blocker: asOptionalNonEmptyString(data.blocker),
