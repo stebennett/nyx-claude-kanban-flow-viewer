@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { countCriteria, extractSection, parseCard } from './parse-card.js';
+import { countCriteria, derivePhaseDocsPresent, extractSection, parseCard } from './parse-card.js';
+import { PHASE_NAMES } from './card-model.js';
 
 const FULL_FIXTURE = `---
 id: CARD-042
@@ -411,5 +412,143 @@ n/a
     const model = parseCard(SUBHEADING_CRITERIA_FIXTURE, { dirName: 'CARD-060' });
 
     expect(model.criteria).toEqual({ done: 1, total: 2 });
+  });
+});
+
+describe('derivePhaseDocsPresent', () => {
+  const ALL_FALSE = {
+    slice: { phase: false, check: false },
+    design: { phase: false, check: false },
+    implement: { phase: false, check: false },
+    test: { phase: false, check: false },
+    review: { phase: false, check: false },
+    deliver: { phase: false, check: false },
+  };
+
+  it('marks every phase true when all six phase docs plus a check doc are present', () => {
+    const entries = [
+      'slice.md',
+      'slice-check.md',
+      'design.md',
+      'design-check.md',
+      'implement.md',
+      'implement-check.md',
+      'test.md',
+      'test-check.md',
+      'review.md',
+      'review-check.md',
+      'deliver.md',
+      'deliver-check.md',
+    ];
+
+    const result = derivePhaseDocsPresent(entries);
+
+    for (const phase of PHASE_NAMES) {
+      expect(result[phase]).toEqual({ phase: true, check: true });
+    }
+  });
+
+  it('returns every phase {phase:false, check:false} for an empty entries array', () => {
+    expect(derivePhaseDocsPresent([])).toEqual(ALL_FALSE);
+  });
+
+  it('returns every phase {phase:false, check:false} when entries is undefined', () => {
+    expect(derivePhaseDocsPresent(undefined)).toEqual(ALL_FALSE);
+  });
+
+  it('marks only the phases present in a subset entries list', () => {
+    const result = derivePhaseDocsPresent(['slice.md', 'design.md']);
+
+    expect(result.slice).toEqual({ phase: true, check: false });
+    expect(result.design).toEqual({ phase: true, check: false });
+    expect(result.implement).toEqual({ phase: false, check: false });
+    expect(result.test).toEqual({ phase: false, check: false });
+    expect(result.review).toEqual({ phase: false, check: false });
+    expect(result.deliver).toEqual({ phase: false, check: false });
+  });
+
+  it('recognizes deliver-check.md as a check-doc variant', () => {
+    expect(derivePhaseDocsPresent(['deliver-check.md']).deliver.check).toBe(true);
+  });
+
+  it('recognizes deliver-check-design.md as a check-doc variant', () => {
+    expect(derivePhaseDocsPresent(['deliver-check-design.md']).deliver.check).toBe(true);
+  });
+
+  it('recognizes deliver-check-2.md as a check-doc variant', () => {
+    expect(derivePhaseDocsPresent(['deliver-check-2.md']).deliver.check).toBe(true);
+  });
+
+  it('distinguishes exact phase-doc match from check-doc match: deliver-check.md alone leaves deliver.phase false', () => {
+    const result = derivePhaseDocsPresent(['deliver-check.md']);
+
+    expect(result.deliver.phase).toBe(false);
+    expect(result.deliver.check).toBe(true);
+  });
+
+  it('does not match a check-doc-like name that does not end in .md', () => {
+    expect(derivePhaseDocsPresent(['deliver-check-note.txt']).deliver.check).toBe(false);
+  });
+
+  it('ignores unrelated entries: card.md, README.md, notes.txt, dotfiles, and directories', () => {
+    const result = derivePhaseDocsPresent(['card.md', 'README.md', 'notes.txt', '.DS_Store', 'attachments']);
+
+    expect(result).toEqual(ALL_FALSE);
+  });
+});
+
+describe('derivePhaseDocsPresent property', () => {
+  it('matches the Set-membership formula for every phase, for any entries array', () => {
+    const phaseDocArb = fc.constantFrom(...PHASE_NAMES.map((p) => `${p}.md`));
+    const checkDocArb = fc.constantFrom(...PHASE_NAMES.map((p) => `${p}-check.md`));
+    const noiseArb = fc
+      .string({ minLength: 0, maxLength: 12 })
+      .filter((s) => !/[\r\n]/.test(s));
+    const entryArb = fc.oneof(phaseDocArb, checkDocArb, noiseArb);
+
+    fc.assert(
+      fc.property(fc.array(entryArb, { maxLength: 20 }), (entries) => {
+        const result = derivePhaseDocsPresent(entries);
+        const names = new Set(entries);
+
+        for (const p of PHASE_NAMES) {
+          expect(result[p].phase).toBe(names.has(`${p}.md`));
+          expect(result[p].check).toBe(
+            names.has(`${p}-check.md`) ||
+              [...names].some((n) => n.startsWith(`${p}-check-`) && n.endsWith('.md')),
+          );
+        }
+      }),
+      { seed: 20260718, numRuns: 200 },
+    );
+  });
+});
+
+describe('parseCard phase-doc presence (AC-1/AC-2)', () => {
+  it('passes entries through to phaseDocsPresent', () => {
+    const model = parseCard(FULL_FIXTURE, {
+      dirName: 'CARD-042',
+      entries: ['design.md', 'design-check.md'],
+    });
+
+    expect(model.phaseDocsPresent.design).toEqual({ phase: true, check: true });
+    expect(model.phaseDocsPresent.deliver).toEqual({ phase: false, check: false });
+  });
+
+  it('defaults every phase to {phase:false, check:false} when entries is omitted', () => {
+    const model = parseCard(FULL_FIXTURE, { dirName: 'CARD-042' });
+
+    for (const phase of PHASE_NAMES) {
+      expect(model.phaseDocsPresent[phase]).toEqual({ phase: false, check: false });
+    }
+  });
+
+  it('AC-2 purity: derives from entries, never reads dirName from disk', () => {
+    const model = parseCard(FULL_FIXTURE, {
+      dirName: '/does/not/exist',
+      entries: ['deliver.md'],
+    });
+
+    expect(model.phaseDocsPresent.deliver.phase).toBe(true);
   });
 });

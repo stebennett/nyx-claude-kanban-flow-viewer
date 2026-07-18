@@ -1,8 +1,9 @@
 import matter from 'gray-matter';
-import type { CardModel, ReworkCounts, CriteriaCount } from './card-model.js';
+import type { CardModel, ReworkCounts, CriteriaCount, PhaseName, PhaseDocsPresent } from './card-model.js';
 
 export interface ParseCardOptions {
   dirName: string;
+  entries?: readonly string[];
 }
 
 function asString(value: unknown): string {
@@ -93,6 +94,35 @@ export function countCriteria(sectionText: string): CriteriaCount {
   return { done, total: done + notDone };
 }
 
+/**
+ * True when `names` contains a check-doc variant for `phase`: the exact
+ * `<phase>-check.md`, or a numbered/named variant `<phase>-check-*.md`.
+ */
+function hasCheckDoc(phase: PhaseName, names: Set<string>): boolean {
+  return (
+    names.has(`${phase}-check.md`) ||
+    [...names].some((n) => n.startsWith(`${phase}-check-`) && n.endsWith('.md'))
+  );
+}
+
+/**
+ * Derives, per phase, whether the phase's doc and/or check doc(s) are present in a
+ * card dir's entries listing. Pure: reads only `entries`, never touches the filesystem
+ * (the caller already performed the one `readdir` to locate `card.md`).
+ */
+export function derivePhaseDocsPresent(entries: readonly string[] | undefined): PhaseDocsPresent {
+  const names = new Set(entries ?? []);
+
+  return {
+    slice: { phase: names.has('slice.md'), check: hasCheckDoc('slice', names) },
+    design: { phase: names.has('design.md'), check: hasCheckDoc('design', names) },
+    implement: { phase: names.has('implement.md'), check: hasCheckDoc('implement', names) },
+    test: { phase: names.has('test.md'), check: hasCheckDoc('test', names) },
+    review: { phase: names.has('review.md'), check: hasCheckDoc('review', names) },
+    deliver: { phase: names.has('deliver.md'), check: hasCheckDoc('deliver', names) },
+  };
+}
+
 export function parseCard(raw: string, options: ParseCardOptions): CardModel {
   const { data, content } = matter(raw);
 
@@ -121,6 +151,7 @@ export function parseCard(raw: string, options: ParseCardOptions): CardModel {
     started: asDateString(data.started),
     delivered: asDateString(data.delivered),
     dirName: options.dirName,
+    phaseDocsPresent: derivePhaseDocsPresent(options.entries),
   };
 
   return model;
