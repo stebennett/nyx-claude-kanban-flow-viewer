@@ -8,3 +8,4 @@
 | [ADR-0004](0004-ci-gates-single-reusable-workflow-no-build-state-caching.md) | CI gates run as a single reusable workflow, with no build-state caching | Superseded by ADR-0006 | CARD-002 | 2026-07-18 |
 | [ADR-0005](0005-card-model-shape-and-explicit-frontmatter-mapping.md) | Card model shape and the explicit snake_case→camelCase frontmatter mapping | Accepted | CARD-019 | 2026-07-18 |
 | [ADR-0006](0006-ci-gate-order-build-before-test.md) | CI gate order runs build before test (build gate feeds the test gate) | Accepted | CARD-002 | 2026-07-18 |
+| [ADR-0007](0007-release-workflow-reuse-gates-sha-pinned-provenance-publish.md) | Release on a vX.Y.Z tag: reuse CI gates, SHA-pinned actions, provenance publish | Accepted | CARD-003 | 2026-07-18 |
