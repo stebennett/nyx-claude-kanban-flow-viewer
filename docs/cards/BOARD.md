@@ -29,11 +29,11 @@ _last rendered: 2026-07-17_
 ## Design
 
 ## Implement
+- CARD-001 — Scaffold the TypeScript package and toolchain · implement · task/001-scaffold-package-toolchain [M1] · rework: review panel (design, typescript)
 
 ## Test
 
 ## Review
-- CARD-001 — Scaffold the TypeScript package and toolchain · review · task/001-scaffold-package-toolchain [M1]
 
 ## Deliver
 
