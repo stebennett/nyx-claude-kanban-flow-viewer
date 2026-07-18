@@ -23,6 +23,15 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
 - [CARD-004] The canonical phase-doc filename set (slice/design/implement/test/review/deliver + their
   `*-check` docs) is defined once in the parser (CARD-020, for REQ-025's presence scan); CARD-011
   (blocked-flag rendering) and CARD-018 (serving phase docs) should reuse it rather than re-deriving.
+- [CARD-019] `gray-matter` ships no bundled type declarations; `@types/gray-matter` is a devDependency
+  required for the `tsc -b --noEmit` gate. `gray-matter` itself is the project's first runtime
+  dependency (`dependencies`, not `devDependencies`) — see ADR-0005, which amends ADR-0002's
+  "zero runtime deps" consequence.
+- [CARD-019] The card model uses an EXPLICIT typed frontmatter→field map (not a generic snake→camel
+  key transform): the model is a closed, intentional JSON API contract (ADR-0005), so unmodeled
+  frontmatter keys (`reqs`, `right_sized`, `review_lenses_failed`) are deliberately dropped and every
+  field gets its own coercion + default. `parseCard(raw, options)` takes an options object precisely so
+  future inputs (CARD-020's phase-doc `entries`) extend additively without a signature redesign.
 - [CARD-002] CI lives in ONE reusable workflow `.github/workflows/ci.yml` with
   `on: [pull_request(branches: main), workflow_call]`; the four gates run as sequential steps in a
   single Node 20 ubuntu job after `npm ci`. CARD-003's release reuses the gates via
@@ -94,5 +103,15 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   type-aware lint rule → lint green, `tsc -b --noEmit` red); **test** = a failing `expect(2).toBe(3)`
   (valid TS+lint, vitest red); **build** = point `index.html`'s `<script src>` at a missing file
   (tsc/eslint/vitest never read index.html; vite build red).
+- [CARD-019] Unquoted ISO dates in card.md frontmatter (`created: 2026-07-18`) parse to JS `Date`
+  objects via gray-matter's js-yaml engine, NOT strings. The parser coerces date-ish fields to
+  `'YYYY-MM-DD'` strings (`Date` → `toISOString().slice(0,10)`; string passthrough; else `''`). Assert
+  `typeof === 'string'`, never trust the raw gray-matter value — a `Date` leaking into the `/api/board`
+  JSON would be a defect.
+- [CARD-019] A new non-test `src/server/*.ts` module imported by a co-located `*.test.ts` must be added
+  explicitly to `tsconfig.test.json`'s `include` (as `paths.ts` already is): the test project is
+  composite and its include only globs `**/*.test.ts`, so a non-test file in the program errors TS6307
+  unless listed. The server project's `src/server/**/*.ts` glob already covers it for the build; do NOT
+  add a cross-project `references` edge (CARD-001's TS6310 trap).
 
 ## Glossary
