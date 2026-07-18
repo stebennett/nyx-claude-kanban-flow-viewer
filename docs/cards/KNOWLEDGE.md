@@ -63,6 +63,19 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   test duplicates the impl expression; review confirmed it still catches mutations (it's typed independently,
   not a call-through), but the tag-based style is strictly more robust against a shared authoring error in the
   design's prescribed formula. Prefer tag-based ground truth for the next multi-branch property test.
+- [CARD-003] Secret-bearing GitHub Actions jobs (release.yml's publish) SHA-pin every third-party
+  `uses:` to a full 40-hex commit SHA with a trailing `# vX.Y.Z` comment — never a `@vN` moving tag.
+  Resolve the SHA with `gh api /repos/<owner>/<action>/git/ref/tags/<tag> --jq .object.sha` (deref
+  annotated tags to the commit). The read-only PR-gate `ci.yml` may keep `@v4`; the contract test
+  enforces the SHA shape only on non-local (`uses:` not starting `./`) actions.
+- [CARD-003] `npm publish --provenance` (needs `id-token: write`) requires `repository.url` in
+  package.json or it errors "Provenance generation … requires repository.url". The field points at the
+  git remote `stebennett/nyx-claude-flow-viewer` (NOT the local dir name). Adding it does not break
+  `test/packaging.test.ts` (which never deep-equals the whole package.json — see [CARD-001]).
+- [CARD-003] The release version guard compares `github.ref_name` (the tag, e.g. `v1.2.3`) against
+  `v$(node -p "require('./package.json').version")` and `exit 1`s on mismatch, as the FIRST publish-job
+  step (after checkout, before build/publish) — so a mismatched or un-bumped version publishes nothing.
+  The trigger glob handles shape; the guard handles equality.
 
 ## Gotchas
 
@@ -220,3 +233,8 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   CARD-011, consuming `phaseDocsPresent` for column inference, should avoid a local `const phase = …` that
   shadows/reads as the wrong one (review flagged the overload as advisory; a rename to `{ doc, check }` was
   deferred as it wasn't rework-worthy).
+- [CARD-003] GitHub Actions push-tag filter patterns support `[0-9]` ranges and `+` (one-or-more) and
+  treat `.` as literal, so `'v[0-9]+.[0-9]+.[0-9]+'` fires on `v1.2.3` / `v10.20.30` but NOT on `v1`,
+  `v1.2`, `v1.2.3-rc1`, `v1.2.3.4`, or `latest` (the whole ref must match). This is REQ-037's "other tag
+  shapes do not trigger" enforcement; assert the glob with `toStrictEqual`, since loosening it to `v*`
+  would trigger on `v1`.
