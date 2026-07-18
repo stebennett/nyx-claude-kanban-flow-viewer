@@ -4,12 +4,12 @@ type: task
 layer: domain
 reqs: [REQ-002, REQ-006, REQ-020, REQ-021]
 title: Parse card.md frontmatter and body into the card model
-status: design
-phase: design
+status: implement
+phase: implement
 right_sized: true
 depends_on: [CARD-001]
-branch: task/019-parse-card-frontmatter-body-design
-worktree: .worktrees/CARD-019-design
+branch: task/019-parse-card-frontmatter-body
+worktree: .worktrees/CARD-019-impl
 design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/7
 pr_urls: []
 split_slices: 0

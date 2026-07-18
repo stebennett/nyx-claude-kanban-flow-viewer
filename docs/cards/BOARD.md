@@ -26,10 +26,10 @@ _last rendered: 2026-07-18_
 ## Slice
 
 ## Design
-- CARD-002 — Run lint, typecheck, tests and build on every pull request · design · task/002-ci-pull-request-gates-design [M1] · design PR #6 open (deliver check pass · awaiting merge)
-- CARD-019 — Parse card.md frontmatter and body into the card model · design · task/019-parse-card-frontmatter-body-design [M2] · design PR #7 open (deliver check pass · awaiting merge)
 
 ## Implement
+- CARD-002 — Run lint, typecheck, tests and build on every pull request · implement · task/002-ci-pull-request-gates [M1]
+- CARD-019 — Parse card.md frontmatter and body into the card model · implement · task/019-parse-card-frontmatter-body [M2]
 
 ## Test
 
