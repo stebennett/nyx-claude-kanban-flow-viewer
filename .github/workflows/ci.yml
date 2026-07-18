@@ -1,0 +1,22 @@
+name: CI
+on:
+  pull_request:
+    branches: [main]
+  workflow_call: # CARD-003 release.yml: jobs.gates.uses: ./.github/workflows/ci.yml
+permissions:
+  contents: read
+concurrency: # cancel superseded runs of the SAME ref; keyed so PR/tag runs never cross-cancel
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm' }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck # tsc -b --noEmit (ADR-0003) — via the script, never raw tsc
+      - run: npm test # vitest run
+      - run: npm run build # vite build + tsc -b tsconfig.server.json --force
