@@ -4,8 +4,8 @@ type: task
 layer: infra
 reqs: [REQ-036]
 title: Run lint, typecheck, tests and build on every pull request
-status: implement
-phase: implement
+status: test
+phase: test
 right_sized: true
 depends_on: [CARD-001]
 branch: task/002-ci-pull-request-gates

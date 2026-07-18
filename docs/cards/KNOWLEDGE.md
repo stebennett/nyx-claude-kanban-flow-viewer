@@ -23,10 +23,12 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
 - [CARD-004] The canonical phase-doc filename set (slice/design/implement/test/review/deliver + their
   `*-check` docs) is defined once in the parser (CARD-020, for REQ-025's presence scan); CARD-011
   (blocked-flag rendering) and CARD-018 (serving phase docs) should reuse it rather than re-deriving.
-- [CARD-019] `gray-matter` ships no bundled type declarations; `@types/gray-matter` is a devDependency
-  required for the `tsc -b --noEmit` gate. `gray-matter` itself is the project's first runtime
-  dependency (`dependencies`, not `devDependencies`) — see ADR-0005, which amends ADR-0002's
-  "zero runtime deps" consequence.
+- [CARD-019] `gray-matter` is the project's first runtime dependency (`dependencies`, not
+  `devDependencies`) — see ADR-0005, which amends ADR-0002's "zero runtime deps" consequence. It ships
+  its OWN bundled types (`gray-matter.d.ts` via package.json `typings`), which resolve under
+  NodeNext/verbatimModuleSyntax via `import matter from 'gray-matter'` (esModuleInterop + `export =`).
+  **`@types/gray-matter` does NOT exist on npm (404) and must not be added** — the design phase wrongly
+  assumed it was needed; the implementer confirmed `tsc -b --noEmit` is green without it.
 - [CARD-019] The card model uses an EXPLICIT typed frontmatter→field map (not a generic snake→camel
   key transform): the model is a closed, intentional JSON API contract (ADR-0005), so unmodeled
   frontmatter keys (`reqs`, `right_sized`, `review_lenses_failed`) are deliberately dropped and every
@@ -34,8 +36,10 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   future inputs (CARD-020's phase-doc `entries`) extend additively without a signature redesign.
 - [CARD-002] CI lives in ONE reusable workflow `.github/workflows/ci.yml` with
   `on: [pull_request(branches: main), workflow_call]`; the four gates run as sequential steps in a
-  single Node 20 ubuntu job after `npm ci`. CARD-003's release reuses the gates via
-  `uses: ./.github/workflows/ci.yml` — the filename and job are a cross-card contract, do not rename.
+  single Node 20 ubuntu job after `npm ci`, in the order **lint → typecheck → build → test** (build
+  BEFORE test — see the coupling gotcha below; this differs from ADR-0004's Decision-text order, which
+  is stale on this one point, its substance unchanged). CARD-003's release reuses the gates via
+  `uses: ./.github/workflows/ci.yml` — the filename, job, and order are a cross-card contract, do not rename.
 - [CARD-002] CI caches only `~/.npm` via `actions/setup-node` `cache: npm` (keyed on package-lock.json);
   it never adds `actions/cache` for `dist/` or `*.tsbuildinfo`. `build:server`'s `--force` is the belt,
   no-build-state-cache is the suspenders against the stale-`.tsbuildinfo` false green (ADR-0003).
@@ -113,5 +117,18 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   composite and its include only globs `**/*.test.ts`, so a non-test file in the program errors TS6307
   unless listed. The server project's `src/server/**/*.ts` glob already covers it for the build; do NOT
   add a cross-project `references` edge (CARD-001's TS6310 trap).
+- [CARD-002] `test/packaging.test.ts`'s "ships no test files in the published tarball" test (CARD-001)
+  shells out to `npm run build` via `execFileSync` — so the **test gate depends on the build gate**.
+  CI must run build BEFORE test (lint→typecheck→build→test), or a build-only breakage surfaces as a red
+  TEST step (with build never reached), breaking per-gate attribution. Any future gate-ordering design
+  must account for this coupling.
+- [CARD-019] Adding the project's first runtime dependency breaks CARD-001's `test/packaging.test.ts`
+  assertion that pinned ADR-0002's zero-runtime-deps consequence verbatim. A card whose ADR amends that
+  consequence (as ADR-0005 does for `gray-matter`) must ALSO update that specific assertion (now:
+  `dependencies` deep-equals `['gray-matter']`), or `npm test` goes red though the new code is correct.
+- [CARD-019] A `for (let i = start; i < arr.length; i++) { arr[i] ?? fallback }` loop under
+  `noUncheckedIndexedAccess` leaves an unreachable branch (the `?? fallback` never fires) that v8
+  coverage counts against the branch threshold. Prefer `for (const item of arr.slice(start))` to avoid
+  indexed access rather than writing a test for genuinely dead code.
 
 ## Glossary
