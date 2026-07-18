@@ -4,12 +4,12 @@ type: task
 layer: infra
 reqs: [REQ-036]
 title: Run lint, typecheck, tests and build on every pull request
-status: backlog
-phase: backlog
+status: design
+phase: design
 right_sized: true
 depends_on: [CARD-001]
-branch: ""
-worktree: ""
+branch: task/002-ci-pull-request-gates-design
+worktree: .worktrees/CARD-002-design
 design_pr_url: ""
 pr_urls: []
 split_slices: 0
@@ -23,7 +23,7 @@ reworks:
 review_lenses_failed: []
 estimated_lines: 68
 actual_lines: ""
-started: ""
+started: 2026-07-18
 delivered: ""
 created: 2026-07-17
 ---

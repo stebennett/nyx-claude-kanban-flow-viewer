@@ -4,14 +4,14 @@ type: task
 layer: infra
 reqs: [REQ-006, REQ-007, REQ-036]
 title: Scaffold the TypeScript package and toolchain
-status: implement
-phase: implement
+status: done
+phase: done
 right_sized: true
 depends_on: []
-branch: task/001-scaffold-package-toolchain
-worktree: .worktrees/CARD-001-impl
+branch: ""
+worktree: ""
 design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/1
-pr_urls: []
+pr_urls: [https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/3]
 split_slices: 0
 adrs: [ADR-0001, ADR-0002, ADR-0003]
 reworks:
@@ -20,11 +20,11 @@ reworks:
   implement: 1
   split: 0
   deliver: 0
-review_lenses_failed: [design, typescript]
+review_lenses_failed: []
 estimated_lines: 360
-actual_lines: ""
+actual_lines: 372
 started: 2026-07-17
-delivered: ""
+delivered: 2026-07-18
 created: 2026-07-17
 ---
 
