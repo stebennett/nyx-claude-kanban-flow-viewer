@@ -4,8 +4,8 @@ type: task
 layer: domain
 reqs: [REQ-002, REQ-006, REQ-020, REQ-021, REQ-025]
 title: Parse a card.md into the card model
-status: slice
-phase: slice
+status: split
+phase: split
 right_sized: ""
 depends_on: [CARD-001]
 branch: ""
@@ -42,6 +42,12 @@ implemented: BOARD.md is a rendered view and is never read.
 - [ ] The card model records which phase docs exist in the card dir (slice/design/implement/test/review/deliver/*-check), so a blocked card's column can be inferred without reading their contents (REQ-025)
 
 ## Notes
+**Split into CARD-019, CARD-020** (slice phase, 2026-07-18). This card was carved by acceptance
+criterion: CARD-019 carries the core frontmatter+body parse (AC-1..5, REQ-002/020/021); CARD-020
+carries the phase-doc presence scan (AC-6, REQ-025), depending on CARD-019. CARD-005 was rewired to
+depend on both children. See `slice.md`/`slice-check.md` for the rationale and size re-estimate. This
+card is terminal (`status: split`).
+
 **AC-6 exists because of an intake finding.** REQ-025 lets a blocked card's column be
 inferred from which phase docs exist on disk, but that fact is a directory scan, not
 frontmatter — so it does not ride in on gray-matter for free. Without AC-6 the consuming

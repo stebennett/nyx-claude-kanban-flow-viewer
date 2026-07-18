@@ -17,6 +17,12 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
 - [CARD-001] npm's packlist honored `files: ["dist"]` directly despite `dist/` being gitignored — no
   `!dist` negation or `.npmignore` was needed with npm 11.3.0. Re-verify with `npm pack --dry-run` if
   the npm version pin ever changes.
+- [CARD-004] `card.md` frontmatter keys are snake_case (`depends_on`, `design_pr_url`, `pr_urls`,
+  `split_slices`, `estimated_lines`, `actual_lines`); the card model's fields are camelCase — the parser
+  (CARD-019) is the single mapping point between the two naming conventions.
+- [CARD-004] The canonical phase-doc filename set (slice/design/implement/test/review/deliver + their
+  `*-check` docs) is defined once in the parser (CARD-020, for REQ-025's presence scan); CARD-011
+  (blocked-flag rendering) and CARD-018 (serving phase docs) should reuse it rather than re-deriving.
 
 ## Gotchas
 
