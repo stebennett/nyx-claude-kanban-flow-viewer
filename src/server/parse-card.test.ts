@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import fc from 'fast-check';
 import { countCriteria, extractSection, parseCard } from './parse-card.js';
 
 const FULL_FIXTURE = `---
@@ -224,6 +225,46 @@ These are the exact notes for the card.
     expect(model.notes).toBe('These are the exact notes for the card.');
     expect(model.why).not.toContain('##');
     expect(model.notes).not.toContain('##');
+  });
+});
+
+describe('countCriteria property', () => {
+  it('done equals the checked-line count and total equals checked+unchecked, regardless of noise', () => {
+    const checkboxLikePattern = /^\s*-\s\[[ xX]\]/;
+    const noNewline = (s: string): boolean => !/[\r\n]/.test(s);
+    const itemTextArb = fc.string({ minLength: 0, maxLength: 10 }).filter(noNewline);
+
+    const checkedLineArb = itemTextArb.map((text) => ({
+      kind: 'checked' as const,
+      line: `- [x] ${text}`,
+    }));
+    const uncheckedLineArb = itemTextArb.map((text) => ({
+      kind: 'unchecked' as const,
+      line: `- [ ] ${text}`,
+    }));
+    const noiseLineArb = fc
+      .string({ minLength: 0, maxLength: 20 })
+      .filter((s) => noNewline(s) && !checkboxLikePattern.test(s))
+      .map((line) => ({ kind: 'noise' as const, line }));
+
+    const taggedLineArb = fc.oneof(checkedLineArb, uncheckedLineArb, noiseLineArb);
+
+    fc.assert(
+      fc.property(fc.array(taggedLineArb, { maxLength: 30 }), (taggedLines) => {
+        const expectedDone = taggedLines.filter((l) => l.kind === 'checked').length;
+        const expectedNotDone = taggedLines.filter((l) => l.kind === 'unchecked').length;
+        const sectionText = taggedLines.map((l) => l.line).join('\n');
+
+        const result = countCriteria(sectionText);
+
+        expect(result.done).toBe(expectedDone);
+        expect(result.total).toBe(expectedDone + expectedNotDone);
+        expect(result.done).toBeLessThanOrEqual(result.total);
+        expect(result.done).toBeGreaterThanOrEqual(0);
+        expect(result.total).toBeGreaterThanOrEqual(0);
+      }),
+      { seed: 20260718, numRuns: 200 },
+    );
   });
 });
 
