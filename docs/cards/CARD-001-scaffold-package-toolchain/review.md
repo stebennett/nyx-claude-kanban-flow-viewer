@@ -1,16 +1,15 @@
 ---
 verdict: pass
-review_lenses_failed: [design, typescript]
+review_lenses_failed: []
 ---
 
-# CARD-001 — Review panel (partial — design & typescript pending re-review)
+# CARD-001 — Review panel (complete — 8 lenses, pass)
 
-The first full run stamped **fail**: the design and typescript lenses each carried a blocking
-finding (test files shipped in the tarball; Node globals leaking into the UI project). Both were
-reworked by card-implementer (commits d537390, b5a1751, c3707da) with RED/GREEN evidence. Those two
-lens sections have been stripped here and are queued to re-review the reworked code; the six sections
-below passed on the full run and stand. The absent sections — not this verdict — mark the panel
-incomplete.
+The first full run stamped **fail**: the design and typescript lenses each carried a blocking finding
+(test files shipped in the tarball; Node globals leaking into the UI project). card-implementer
+reworked both (commits d537390, b5a1751, c3707da) with RED/GREEN evidence, and the two lenses
+re-reviewed the reworked code and independently confirmed both findings resolved with no new problem.
+All eight sections below now pass. Verdict: **pass**, panel complete.
 
 ## [acceptance]
 
@@ -38,6 +37,36 @@ None.
   asserted + `npm pack` listing; delete-`bin`/drop-`dist` mutations go red.
 - Scope: only `tsconfig.test.json` exceeds the design sketch, documented as deviation #4.
 - All 6 deviations in `implement.md` justified in writing.
+
+## [design]
+
+Re-review after rework (design lens). Prior blocking finding confirmed fixed; fix re-checked for new
+design regressions.
+
+### Blocking
+- None. The prior blocking finding — `tsconfig.server.json` compiled and shipped `src/server/paths.test.ts`
+  into the durable `dist/server` contract — is resolved and independently verified:
+  - `tsconfig.server.json` now carries `"exclude": ["**/*.test.ts"]`; the exclusion lives in the
+    emitting/composite project, its correct home.
+  - Clean `npm run build` → `dist/server/` holds exactly `index.{js,d.ts}` + `paths.{js,d.ts}` (4 files,
+    no test artifacts). `npm pack --dry-run --json` → 8 tarball entries, zero matching `/\.test\./`,
+    `dist/ui/index.html` present.
+  - The pair-half (`tsconfig.test.json` re-includes `src/server/**/*.test.ts`) preserves typecheck
+    coverage: injecting `const n: number = "x"` into `paths.test.ts` turned `tsc -b --noEmit` red
+    (`TS2322` at the test file), proving the test project still checks it now the server project does
+    not. Reverted clean. No silent loss of coverage.
+
+### Advisory
+- `tsconfig.test.json` shares file membership with the server and node projects (`src/server/paths.ts`,
+  `vite.config.ts`) with no cross-project `references` edge. Deliberate and pre-existing (not introduced
+  by the rework) — the self-contained-include pattern KNOWLEDGE.md records to avoid TS6310; composite
+  build stays green. Observation only.
+
+### Notable good
+- `test/packaging.test.ts`'s `ships no test files in the published tarball` is a genuine durable-contract
+  guard: it runs a real build + `npm pack --dry-run --json` and asserts the actual tarball listing carries
+  no `*.test.*`. It exercises the real dist output, so future drift re-triggers automatically. Closes the
+  class of defect, not just the instance.
 
 ## [functionality]
 
@@ -142,3 +171,33 @@ None.
 - `src/ui/App.tsx`, `src/ui/main.tsx`, `index.html`, `eslint.config.js`, the tsconfig family each
   legible standalone; the `.js`-extension convention consistent across all relative imports. The
   `void uiDistDir` comment explains *why* an apparently-dead call exists — the right kind of comment.
+
+## [typescript]
+
+Re-review after rework (typescript lens). Both prior blocking findings independently re-verified in the
+worktree, not trusted from `implement.md`'s claim.
+
+### Blocking
+None.
+
+### Verified fixed
+- **Finding 1 — Node globals leak (`tsconfig.app.json`):** confirmed `"types": ["vite/client"]` is
+  pinned. Added a `process.cwd()` probe to `src/ui/App.tsx` → `tsc -b --noEmit` failed `TS2591: Cannot
+  find name 'process'` (exit 2), proving the leak is closed. Reverted to byte-identical content (`git
+  diff` empty) → typecheck exit 0.
+- **Finding 2 — test files shipped (`tsconfig.server.json` / `tsconfig.test.json`):** clean
+  `npm run build` → `dist/server` holds exactly 4 files, no `*.test.*`. `npm pack --dry-run --json` → 8
+  files, zero matching `.test.`. Injected `const __probe: number = 'not-a-number';` into `paths.test.ts`
+  → `tsc -b --noEmit` went red (`TS2322`), confirming `tsconfig.test.json`'s broadened include still
+  typechecks the file the server project now excludes. Restored via `git show HEAD:...` → typecheck exit 0.
+- **No regression:** `App.tsx`'s `React.JSX.Element` return type still compiles under the tightened
+  `types` array because `main.tsx` explicitly imports `'react'`, and @types/react's global namespace
+  augmentation applies program-wide once any file resolves the module — not per-file via `types`.
+  Confirmed by the clean final `tsc -b --noEmit` (exit 0).
+
+### Checked clean (full-diff sweep)
+- Type-safety grep (`any`/` as `/`!`) over all changed `.ts`/`.tsx`: every `as` cast lives in
+  `test/packaging.test.ts` narrowing `JSON.parse` output from a locally-trusted file, immediately after
+  parsing — justified, no `as unknown as`, no bare `!`.
+- No hooks yet (`App.tsx`/`main.tsx` are static placeholders); no fetches, no design tokens/hex literals,
+  no `import.meta.env`, no secrets in client code. `vitest run` → 12/12; tree left exactly as found.
