@@ -1,11 +1,11 @@
 ---
 id: ADR-0004
 title: "CI gates run as a single reusable workflow, with no build-state caching"
-status: Accepted
+status: Superseded
 date: 2026-07-18
 card: CARD-002
 supersedes: []
-superseded_by: ""
+superseded_by: "ADR-0006"
 ---
 
 # ADR-0004: CI gates run as a single reusable workflow, with no build-state caching
@@ -32,7 +32,9 @@ cached at all. Node is a single version 20 (the `engines` floor), not a matrix.
 
 ## Status
 
-Accepted
+Superseded by ADR-0006 (the gate *order* changed to build-before-test — see ADR-0006). The rest of
+this ADR's substance — one reusable workflow, `workflow_call` reuse, no build-state caching — still
+holds and is carried forward by ADR-0006.
 
 ## Consequences
 
