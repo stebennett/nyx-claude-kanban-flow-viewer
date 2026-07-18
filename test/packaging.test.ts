@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { uiDistDir } from '../src/server/paths.js';
@@ -34,8 +35,11 @@ describe('packaging contract', () => {
   });
 
   it('declares the four gate scripts CARD-002 will call', () => {
-    expect(pkg.scripts).toHaveProperty('lint');
-    expect(pkg.scripts).toHaveProperty('typecheck');
+    // Literal command strings, not just key presence: ADR-0003 exists to prevent
+    // `typecheck` silently reverting to plain `tsc --noEmit` (a false green that
+    // checks zero files under the project-references layout).
+    expect(pkg.scripts?.lint).toBe('eslint .');
+    expect(pkg.scripts?.typecheck).toBe('tsc -b --noEmit');
     expect(pkg.scripts).toHaveProperty('test');
     expect(pkg.scripts).toHaveProperty('build');
   });
@@ -68,4 +72,20 @@ describe('packaging contract', () => {
 
     expect(resolvedFromBin).toBe(resolvedFromVite);
   });
+
+  it('ships no test files in the published tarball', () => {
+    execFileSync('npm', ['run', 'build'], { cwd: repoRoot, stdio: 'pipe' });
+    const packJson = execFileSync('npm', ['pack', '--dry-run', '--json'], {
+      cwd: repoRoot,
+    }).toString('utf-8');
+    const [tarball] = JSON.parse(packJson) as Array<{
+      files: Array<{ path: string }>;
+    }>;
+
+    const testFiles = (tarball?.files ?? [])
+      .map((f) => f.path)
+      .filter((p) => /\.test\./.test(p));
+
+    expect(testFiles).toEqual([]);
+  }, 30000);
 });
