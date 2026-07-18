@@ -4,7 +4,7 @@ type: task
 layer: infra
 reqs: [REQ-036]
 title: Run lint, typecheck, tests and build on every pull request
-status: deliver
+status: blocked
 phase: deliver
 right_sized: true
 depends_on: [CARD-001]
@@ -13,6 +13,7 @@ worktree: .worktrees/CARD-002-impl
 design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/6
 pr_urls: []
 split_slices: 0
+blocker: "GitHub App nyxhub-bot lacks the Workflows:write permission — pushing .github/workflows/ci.yml is refused ('without workflow scope'). Grant the App Workflows:write and re-approve the installation, then re-deliver. All gates green; work is complete and rebased, only the push is blocked. Never fall back to personal auth (repo doctrine)."
 adrs: [ADR-0004, ADR-0006]
 reworks:
   slice: 0
