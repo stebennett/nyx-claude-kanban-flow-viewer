@@ -1,15 +1,16 @@
 ---
 verdict: pass
-review_lenses_failed: [tests]
+review_lenses_failed: []
 ---
 
-# CARD-019 — Review panel (partial — tests pending re-review)
+# CARD-019 — Review panel (complete — 8 lenses, pass)
 
-The first full run stamped **fail**: the tests lens found a designed `asDateString` branch that
-executes but is never asserted (a mutation blanking every quoted date survived all 18 tests, masked by
-100% branch coverage). That is being reworked by card-implementer. The `## [tests]` section is stripped
-here and queued to re-review the reworked test; the seven sections below passed on the full run and
-stand. The absent section — not this verdict — marks the panel incomplete.
+The first full run stamped **fail**: the tests lens found a designed `asDateString` branch that executed
+but was never asserted (a mutation blanking every quoted date survived all 18 tests, masked by 100%
+branch coverage). card-implementer reworked it (added the 3 date assertions + 4 coercion edge-case tests,
+commit 4544f70), and the tests lens re-reviewed the reworked code and independently confirmed the gap
+closed (re-ran the mutation → RED → revert → GREEN) with nothing weakened. All eight sections below now
+pass. Verdict: **pass**, panel complete.
 
 ## [acceptance]
 ### Blocking
@@ -70,6 +71,20 @@ None.
 ### Checked
 Field map + 7 coercion helpers are proportionate, faithful to ADR-0005's explicit-map decision; no
 speculative abstraction; the 541-vs-500 overage traces 1:1 to the Test strategy, not padding.
+
+## [tests]
+Re-reviewed after rework. Prior BLOCKING finding resolved and independently re-verified.
+### Blocking
+None. Mutated `parse-card.ts:36` (`asDateString` string branch `return value;` → `return '';`), ran
+`vitest run src/server/parse-card.test.ts` → the full-fields test failed (`expected '' to be
+'2026-07-01'`, 21 pass / 1 fail); reverted → 22/22 green. The gap is closed and asserted.
+### Advisory
+None new. The 4 folded-in coercion edge-case tests were each independently mutation-tested and confirmed
+non-vacuous (`asStringArray` filter, `asNonNegInt` guard, `asNumberOrNull` clamp). Rework commit 4544f70
+is pure test additions (60 insertions / 0 deletions) — no production code or existing assertion touched.
+### Checked
+Full suite 34/34; 100% coverage on `parse-card.ts` re-confirmed. The rework's implement.md mutation proof
+reproduced verbatim.
 
 ## [readability]
 ### Blocking
