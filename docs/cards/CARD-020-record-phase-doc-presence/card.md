@@ -11,7 +11,7 @@ depends_on: [CARD-019]
 branch: task/020-record-phase-doc-presence
 worktree: .worktrees/CARD-020-impl
 design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/20
-pr_urls: []
+pr_urls: [https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/24]
 split_slices: 0
 adrs: []
 reworks:
