@@ -20,7 +20,7 @@ reworks:
   implement: 1
   split: 0
   deliver: 0
-review_lenses_failed: [tests]
+review_lenses_failed: []
 estimated_lines: 300
 actual_lines: ""
 started: 2026-07-18
