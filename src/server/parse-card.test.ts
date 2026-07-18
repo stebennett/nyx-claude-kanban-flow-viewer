@@ -54,6 +54,9 @@ describe('parseCard', () => {
     expect(model.estimatedLines).toBe(300);
     expect(model.actualLines).toBe(280);
     expect(model.dirName).toBe('CARD-042-sample-card');
+    expect(model.created).toBe('2026-07-01');
+    expect(model.started).toBe('2026-07-02');
+    expect(model.delivered).toBe('2026-07-03');
   });
 
   it('applies typed defaults for missing optional frontmatter fields and never throws', () => {
@@ -117,6 +120,63 @@ actual_lines: ""
 
     expect(model.estimatedLines).toBeNull();
     expect(model.actualLines).toBeNull();
+  });
+
+  it('defaults a negative reworks producer to 0 (asNonNegInt rejects negative numbers)', () => {
+    const NEGATIVE_REWORK_FIXTURE = `---
+id: CARD-061
+title: Negative rework card
+status: implement
+reworks:
+  slice: -1
+---
+`;
+
+    const model = parseCard(NEGATIVE_REWORK_FIXTURE, { dirName: 'CARD-061' });
+
+    expect(model.reworks).toEqual({ slice: 0, design: 0, implement: 0, split: 0, deliver: 0 });
+  });
+
+  it('defaults split_slices to 0 when given the wrong type (asNonNegInt rejects non-numbers)', () => {
+    const WRONG_TYPE_SPLIT_SLICES_FIXTURE = `---
+id: CARD-062
+title: Wrong type split_slices card
+status: implement
+split_slices: "two"
+---
+`;
+
+    const model = parseCard(WRONG_TYPE_SPLIT_SLICES_FIXTURE, { dirName: 'CARD-062' });
+
+    expect(model.splitSlices).toBe(0);
+  });
+
+  it('passes a negative estimated_lines through unchanged (asNumberOrNull does not clamp negatives)', () => {
+    const NEGATIVE_ESTIMATE_FIXTURE = `---
+id: CARD-063
+title: Negative estimate card
+status: implement
+estimated_lines: -50
+---
+`;
+
+    const model = parseCard(NEGATIVE_ESTIMATE_FIXTURE, { dirName: 'CARD-063' });
+
+    expect(model.estimatedLines).toBe(-50);
+  });
+
+  it('drops non-string items from depends_on (asStringArray filters mixed-type arrays)', () => {
+    const MIXED_TYPE_DEPENDS_ON_FIXTURE = `---
+id: CARD-064
+title: Mixed type depends_on card
+status: implement
+depends_on: [CARD-001, 123]
+---
+`;
+
+    const model = parseCard(MIXED_TYPE_DEPENDS_ON_FIXTURE, { dirName: 'CARD-064' });
+
+    expect(model.dependsOn).toEqual(['CARD-001']);
   });
 
   it('sets blocker only when the frontmatter value is a non-empty string', () => {
