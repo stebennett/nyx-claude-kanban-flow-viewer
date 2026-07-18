@@ -130,5 +130,26 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   `noUncheckedIndexedAccess` leaves an unreachable branch (the `?? fallback` never fires) that v8
   coverage counts against the branch threshold. Prefer `for (const item of arr.slice(start))` to avoid
   indexed access rather than writing a test for genuinely dead code.
+- [CARD-019] **`parseCard` is NOT total** — `matter(raw)` throws a `YAMLException` on malformed
+  frontmatter (unterminated quote, bad indentation, duplicate keys). No-frontmatter and scalar/list
+  frontmatter degrade to defaults, but a syntax error propagates. Since `card.md` is untrusted (REQ-002),
+  **CARD-005's board walk MUST wrap each `parseCard` call in try/catch and route failures to the
+  `parseErrors` tray (REQ-019/033)** — the parser deliberately does not self-heal.
+- [CARD-019] Card-model construction reads gray-matter's `data` only via explicit named fields
+  (`data.id`, `data.reworks`, …) and NEVER spreads/iterates it. This is a load-bearing security property:
+  js-yaml 3.13+ leaves a hostile `__proto__`/`constructor` in frontmatter as an inert own-key on `data`,
+  and explicit reads keep it from reaching the model/JSON API. Do NOT replace with a `{...data}` transform.
+- [CARD-019] v8 coverage reports 100% for a branch that **executes but is never asserted on** (a mutation
+  there passes all tests). When a coercion helper has multiple enumerated outcomes (design's Interfaces),
+  verify each has its OWN asserted fixture — coverage % alone doesn't prove it. (Caught the `asDateString`
+  string-passthrough branch shipping unasserted.)
+- [CARD-002] Parsing GitHub Actions YAML with js-yaml v4's default schema keeps the `on:` mapping key as
+  the string `"on"` (does NOT coerce to boolean `true`). A CI-YAML contract test that asserts a gate is
+  blocking should also assert no gate step carries `continue-on-error: true` or a skipping `if:` — those
+  turn a gate non-blocking while every command-presence/order assertion stays green (a false green).
+- [CARD-002] `ci.yml` pins `actions/checkout`/`actions/setup-node` to major tag `@v4` — acceptable for a
+  `contents: read`, secret-free `pull_request` gate job. **CARD-003 must SHA-pin these actions** where it
+  extends the workflow under a release job with `NPM_TOKEN` + publish: a compromised `@v4` tag in a
+  secret-bearing job is a real supply-chain exposure.
 
 ## Glossary

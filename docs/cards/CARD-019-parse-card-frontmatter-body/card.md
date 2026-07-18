@@ -4,8 +4,8 @@ type: task
 layer: domain
 reqs: [REQ-002, REQ-006, REQ-020, REQ-021]
 title: Parse card.md frontmatter and body into the card model
-status: review
-phase: review
+status: implement
+phase: implement
 right_sized: true
 depends_on: [CARD-001]
 branch: task/019-parse-card-frontmatter-body
@@ -17,10 +17,10 @@ adrs: [ADR-0005]
 reworks:
   slice: 0
   design: 0
-  implement: 0
+  implement: 1
   split: 0
   deliver: 0
-review_lenses_failed: []
+review_lenses_failed: [tests]
 estimated_lines: 300
 actual_lines: ""
 started: 2026-07-18
