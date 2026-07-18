@@ -28,10 +28,10 @@ _last rendered: 2026-07-18_
 ## Design
 
 ## Implement
-- CARD-002 — Run lint, typecheck, tests and build on every pull request · implement · task/002-ci-pull-request-gates [M1]
-- CARD-019 — Parse card.md frontmatter and body into the card model · implement · task/019-parse-card-frontmatter-body [M2]
 
 ## Test
+- CARD-002 — Run lint, typecheck, tests and build on every pull request · test · task/002-ci-pull-request-gates [M1]
+- CARD-019 — Parse card.md frontmatter and body into the card model · test · task/019-parse-card-frontmatter-body [M2] · ⚠ 541 lines > size_limit (split decision at review)
 
 ## Review
 
