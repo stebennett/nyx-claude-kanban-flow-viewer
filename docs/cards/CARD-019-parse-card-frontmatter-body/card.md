@@ -10,7 +10,7 @@ right_sized: true
 depends_on: [CARD-001]
 branch: task/019-parse-card-frontmatter-body-design
 worktree: .worktrees/CARD-019-design
-design_pr_url: ""
+design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/7
 pr_urls: []
 split_slices: 0
 adrs: [ADR-0005]
