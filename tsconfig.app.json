@@ -5,6 +5,7 @@
     "module": "ESNext",
     "jsx": "react-jsx",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
     "noEmit": true,
     "composite": true
   },
