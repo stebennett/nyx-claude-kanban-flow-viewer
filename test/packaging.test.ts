@@ -29,9 +29,9 @@ describe('packaging contract', () => {
     expect(pkg.files).toContain('dist');
   });
 
-  it('is an ESM package with no runtime dependencies', () => {
+  it('is an ESM package whose only runtime dependency is gray-matter (ADR-0005 amends ADR-0002)', () => {
     expect(pkg.type).toBe('module');
-    expect(pkg.dependencies === undefined || Object.keys(pkg.dependencies).length === 0).toBe(true);
+    expect(Object.keys(pkg.dependencies ?? {})).toEqual(['gray-matter']);
   });
 
   it('declares the four gate scripts CARD-002 will call', () => {
