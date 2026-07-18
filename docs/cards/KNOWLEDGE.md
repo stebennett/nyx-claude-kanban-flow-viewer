@@ -151,5 +151,11 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   `contents: read`, secret-free `pull_request` gate job. **CARD-003 must SHA-pin these actions** where it
   extends the workflow under a release job with `NPM_TOKEN` + publish: a compromised `@v4` tag in a
   secret-bearing job is a real supply-chain exposure.
+- [CARD-002] **The nyxhub-bot GitHub App needs `Workflows: write` permission to push any
+  `.github/workflows/*` file.** Without it GitHub rejects the push: *"refusing to allow an OAuth App to
+  create or update workflow `.github/workflows/ci.yml` without `workflow` scope."* This is an App-config
+  gap the driver must fix on GitHub.com (add the Workflows permission, re-approve the installation) —
+  **never fall back to personal auth** (repo identity doctrine). **Blocks CARD-002 delivery and will
+  block CARD-003** (release workflow) identically until granted.
 
 ## Glossary

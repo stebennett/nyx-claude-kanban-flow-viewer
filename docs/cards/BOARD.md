@@ -28,16 +28,16 @@ _last rendered: 2026-07-18_
 ## Design
 
 ## Implement
-- CARD-019 — Parse card.md frontmatter and body into the card model · implement · task/019-parse-card-frontmatter-body [M2] · rework: review panel (tests) · ⚠ 541 lines > size_limit
 
 ## Test
 
 ## Review
+- CARD-019 — Parse card.md frontmatter and body into the card model · review · task/019-parse-card-frontmatter-body [M2] · re-reviewing tests lens · ⚠ 601 lines > size_limit (split after panel)
 
 ## Deliver
-- CARD-002 — Run lint, typecheck, tests and build on every pull request · deliver · task/002-ci-pull-request-gates [M1] · ready to open PR
 
 ## Blocked
+- CARD-002 — Run lint, typecheck, tests and build on every pull request · deliver · task/002-ci-pull-request-gates [M1] · 🛑 BLOCKED: App lacks Workflows:write to push ci.yml (grant + re-approve)
 
 ## Done
 - CARD-001 — Scaffold the TypeScript package and toolchain · delivered 2026-07-18 · PRs #1 (design) + #3 · 372 lines · 1 rework [M1]
