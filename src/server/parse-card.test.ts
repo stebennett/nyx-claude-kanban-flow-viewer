@@ -145,6 +145,27 @@ blocker: ""
     expect(parseCard(EMPTY_BLOCKER_FIXTURE, { dirName: 'CARD-054' }).blocker).toBeUndefined();
   });
 
+  it('coerces unquoted YAML date frontmatter to YYYY-MM-DD strings', () => {
+    const UNQUOTED_DATE_FIXTURE = `---
+id: CARD-056
+title: Unquoted date card
+status: implement
+created: 2026-07-18
+started: 2026-07-19
+delivered: 2026-07-20
+---
+`;
+
+    const model = parseCard(UNQUOTED_DATE_FIXTURE, { dirName: 'CARD-056' });
+
+    expect(typeof model.created).toBe('string');
+    expect(model.created).toBe('2026-07-18');
+    expect(typeof model.started).toBe('string');
+    expect(model.started).toBe('2026-07-19');
+    expect(typeof model.delivered).toBe('string');
+    expect(model.delivered).toBe('2026-07-20');
+  });
+
   it('passes an unrecognized status value through unchanged', () => {
     const UNKNOWN_STATUS_FIXTURE = `---
 id: CARD-055

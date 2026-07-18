@@ -26,6 +26,17 @@ function asOptionalNonEmptyString(value: unknown): string | undefined {
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
+/**
+ * Unquoted ISO dates in YAML frontmatter (e.g. `created: 2026-07-18`) parse to a JS
+ * `Date` via gray-matter's js-yaml engine, not a string. Coerce to a plain
+ * 'YYYY-MM-DD' string so a `Date` never leaks into the CardModel / JSON API.
+ */
+function asDateString(value: unknown): string {
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (typeof value === 'string') return value;
+  return '';
+}
+
 function asReworks(value: unknown): ReworkCounts {
   const source = typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
   return {
@@ -61,9 +72,9 @@ export function parseCard(raw: string, options: ParseCardOptions): CardModel {
     why: '',
     notes: '',
     blocker: asOptionalNonEmptyString(data.blocker),
-    created: asString(data.created),
-    started: asString(data.started),
-    delivered: asString(data.delivered),
+    created: asDateString(data.created),
+    started: asDateString(data.started),
+    delivered: asDateString(data.delivered),
     dirName: options.dirName,
   };
 
