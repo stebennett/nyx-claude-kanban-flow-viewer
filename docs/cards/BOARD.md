@@ -6,7 +6,6 @@ _Rendered by `/kanban`. Do not hand-edit below the header._
 _last rendered: 2026-07-18_
 
 ## Backlog
-- CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · backlog [M1]
 - CARD-006 — Serve the parsed board over HTTP · backlog [M2]
 - CARD-007 — Push live snapshots over SSE · backlog [M2]
 - CARD-008 — Serve a card's phase docs · backlog [M2]
@@ -22,9 +21,10 @@ _last rendered: 2026-07-18_
 - CARD-018 — CLI flags and startup validation · backlog [M2]
 
 ## Slice
-- CARD-005 — Build a board snapshot from the board directory · slice [M2]
+- CARD-005 — Build a board snapshot from the board directory · slice [M2] · split proposed (2 children) — checking
 
 ## Design
+- CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · design · task/003-release-on-version-tag-design [M1]
 
 ## Implement
 
@@ -33,12 +33,12 @@ _last rendered: 2026-07-18_
 ## Review
 
 ## Deliver
-- CARD-002 — Run lint, typecheck, tests and build on every pull request · deliver · task/002-ci-pull-request-gates [M1] · PR #25 open · CI green ✅ (1 deliver rework) — awaiting merge
 
 ## Blocked
 
 ## Done
 - CARD-001 — Scaffold the TypeScript package and toolchain · delivered 2026-07-18 · PRs #1 (design) + #3 · 372 lines · 1 rework [M1]
+- CARD-002 — Run lint, typecheck, tests and build on every pull request · delivered 2026-07-18 · PRs #6 (design) + #25 · 191 lines · 1 deliver rework [M1]
 - CARD-019 — Parse card.md frontmatter and body into the card model · delivered 2026-07-18 · PRs #7 (design) + #9 · 601 lines · 1 rework [M2]
 - CARD-020 — Record phase-doc presence in the card model · delivered 2026-07-18 · PRs #20 (design) + #24 · 185 lines · 0 reworks [M2]
 
@@ -48,7 +48,7 @@ _last rendered: 2026-07-18_
 ## Superseded
 
 ## Milestones
-- M1 — Toolchain and delivery pipeline · 1/3 · in progress
+- M1 — Toolchain and delivery pipeline · 2/3 · in progress
 - M2 — Headless board API · 2/7 · in progress
 - M3 — Live board UI · 0/6 · not started
 - M4 — Detail, milestones and activity · 0/3 · not started
