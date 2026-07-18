@@ -48,8 +48,31 @@ function asReworks(value: unknown): ReworkCounts {
   };
 }
 
+/**
+ * Extracts the trimmed body text under a `## <heading>` line, stopping at the next
+ * `#` or `##` heading (a `###` sub-heading does not terminate the section). Returns
+ * '' when the heading is absent.
+ */
+export function extractSection(content: string, heading: string): string {
+  const lines = content.split('\n');
+  const headingPattern = new RegExp(`^##\\s+${heading}\\s*$`);
+  const terminatorPattern = /^#{1,2}\s/;
+
+  const startIndex = lines.findIndex((line) => headingPattern.test(line));
+  if (startIndex === -1) return '';
+
+  const bodyLines: string[] = [];
+  for (let i = startIndex + 1; i < lines.length; i++) {
+    const line = lines[i] ?? '';
+    if (terminatorPattern.test(line)) break;
+    bodyLines.push(line);
+  }
+
+  return bodyLines.join('\n').trim();
+}
+
 export function parseCard(raw: string, options: ParseCardOptions): CardModel {
-  const { data } = matter(raw);
+  const { data, content } = matter(raw);
 
   const model: CardModel = {
     id: asString(data.id),
@@ -69,8 +92,8 @@ export function parseCard(raw: string, options: ParseCardOptions): CardModel {
     estimatedLines: asNumberOrNull(data.estimated_lines),
     actualLines: asNumberOrNull(data.actual_lines),
     criteria: { done: 0, total: 0 } satisfies CriteriaCount,
-    why: '',
-    notes: '',
+    why: extractSection(content, 'Why'),
+    notes: extractSection(content, 'Notes'),
     blocker: asOptionalNonEmptyString(data.blocker),
     created: asDateString(data.created),
     started: asDateString(data.started),
