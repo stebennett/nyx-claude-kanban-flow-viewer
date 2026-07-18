@@ -33,7 +33,7 @@ _last rendered: 2026-07-18_
 ## Review
 
 ## Deliver
-- CARD-020 — Record phase-doc presence in the card model · deliver · task/020-record-phase-doc-presence [M2] · 185 lines, no split
+- CARD-020 — Record phase-doc presence in the card model · deliver · task/020-record-phase-doc-presence [M2] · PR #24 open (185 lines)
 
 ## Blocked
 - CARD-002 — Run lint, typecheck, tests and build on every pull request · deliver · task/002-ci-pull-request-gates [M1] · 🛑 BLOCKED: App lacks Workflows:write to push ci.yml (grant + re-approve)
