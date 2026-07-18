@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseCard } from './parse-card.js';
+import { extractSection, parseCard } from './parse-card.js';
 
 const FULL_FIXTURE = `---
 id: CARD-042
@@ -177,5 +177,52 @@ status: frobnicate
     const model = parseCard(UNKNOWN_STATUS_FIXTURE, { dirName: 'CARD-055' });
 
     expect(model.status).toBe('frobnicate');
+  });
+});
+
+describe('extractSection', () => {
+  it('returns the trimmed body of the matching heading', () => {
+    const content = `## Why\nThis is the why paragraph.\n\n## Notes\nSome notes here.\n`;
+
+    expect(extractSection(content, 'Why')).toBe('This is the why paragraph.');
+  });
+
+  it('returns an empty string when the heading is absent', () => {
+    const content = `## Something else\nirrelevant\n`;
+
+    expect(extractSection(content, 'Why')).toBe('');
+  });
+
+  it('does not terminate the section at a ### sub-heading', () => {
+    const content = `## Notes\n### sub\nafter the sub-heading\n\n## Next\nnope\n`;
+
+    expect(extractSection(content, 'Notes')).toBe('### sub\nafter the sub-heading');
+  });
+});
+
+describe('parseCard why/notes extraction', () => {
+  it('extracts the Why paragraph and Notes from the body (AC-3)', () => {
+    const WHY_NOTES_FIXTURE = `---
+id: CARD-057
+title: Why notes card
+status: implement
+---
+
+## Why
+This is the exact why sentence for the card.
+
+## Acceptance criteria
+- [ ] one thing
+
+## Notes
+These are the exact notes for the card.
+`;
+
+    const model = parseCard(WHY_NOTES_FIXTURE, { dirName: 'CARD-057' });
+
+    expect(model.why).toBe('This is the exact why sentence for the card.');
+    expect(model.notes).toBe('These are the exact notes for the card.');
+    expect(model.why).not.toContain('##');
+    expect(model.notes).not.toContain('##');
   });
 });
