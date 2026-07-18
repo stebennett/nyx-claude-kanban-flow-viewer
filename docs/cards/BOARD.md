@@ -27,9 +27,9 @@ _last rendered: 2026-07-18_
 ## Design
 
 ## Implement
-- CARD-020 — Record phase-doc presence in the card model · implement · task/020-record-phase-doc-presence [M2]
 
 ## Test
+- CARD-020 — Record phase-doc presence in the card model · test · task/020-record-phase-doc-presence [M2]
 
 ## Review
 
