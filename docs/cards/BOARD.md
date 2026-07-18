@@ -30,10 +30,10 @@ _last rendered: 2026-07-18_
 ## Implement
 
 ## Test
-- CARD-019 — Parse card.md frontmatter and body into the card model · test · task/019-parse-card-frontmatter-body [M2] · ⚠ 541 lines > size_limit (split decision at review)
 
 ## Review
 - CARD-002 — Run lint, typecheck, tests and build on every pull request · review · task/002-ci-pull-request-gates [M1]
+- CARD-019 — Parse card.md frontmatter and body into the card model · review · task/019-parse-card-frontmatter-body [M2] · ⚠ 541 lines > size_limit (split decision after panel)
 
 ## Deliver
 
