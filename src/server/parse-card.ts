@@ -62,8 +62,7 @@ export function extractSection(content: string, heading: string): string {
   if (startIndex === -1) return '';
 
   const bodyLines: string[] = [];
-  for (let i = startIndex + 1; i < lines.length; i++) {
-    const line = lines[i] ?? '';
+  for (const line of lines.slice(startIndex + 1)) {
     if (terminatorPattern.test(line)) break;
     bodyLines.push(line);
   }
