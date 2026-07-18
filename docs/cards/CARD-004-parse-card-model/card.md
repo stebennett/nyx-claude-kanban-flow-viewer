@@ -4,8 +4,8 @@ type: task
 layer: domain
 reqs: [REQ-002, REQ-006, REQ-020, REQ-021, REQ-025]
 title: Parse a card.md into the card model
-status: backlog
-phase: backlog
+status: slice
+phase: slice
 right_sized: ""
 depends_on: [CARD-001]
 branch: ""
@@ -23,7 +23,7 @@ reworks:
 review_lenses_failed: []
 estimated_lines: 393
 actual_lines: ""
-started: ""
+started: 2026-07-18
 delivered: ""
 created: 2026-07-17
 ---

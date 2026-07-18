@@ -54,5 +54,25 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   of build state without also caching `dist/`, or a developer's `rm -rf dist`, will. Fixed by adding
   `--force` to `build:server`; **CARD-002 must not cache `*.tsbuildinfo` across CI runs without also
   caching `dist/`**.
+- [CARD-001] A leaf tsconfig with no explicit `types` array auto-includes every `node_modules/@types`
+  package (incl. `@types/node`), silently leaking Node ambient globals (`process`, `Buffer`,
+  `__dirname`) into a browser/UI project — the project-reference split looks like it enforces the
+  server/UI boundary but does NOT. Pin `types` on every leaf config: `["vite/client"]` for the UI
+  project, `["node"]` for server/node/test projects. (Found in review; the boundary is load-bearing
+  for every `src/ui` card.)
+- [CARD-001] An emitting tsc project (has `outDir`, no `exclude`) compiles AND emits any co-located
+  `*.test.ts` matching its `include` glob straight into `dist/` — and, since `files: ["dist"]`, into
+  the published npm tarball. Always pair a `src/**/*.ts` include with `exclude: ["**/*.test.ts"]` on
+  the emitting project, and give the noEmit typecheck project the matching include so coverage isn't
+  silently lost. **Critical for CARD-004+ (co-located tests) and CARD-003 (publish).** Guarded by
+  `test/packaging.test.ts`'s tarball-set assertion.
+- [CARD-001] `@types/react`'s global `React` namespace augmentation is program-wide, not per-file:
+  pinning `types: ["vite/client"]` on the UI tsconfig to exclude Node globals does NOT break a
+  component's bare `React.JSX.Element` annotation, because any other file in the same program (e.g.
+  `main.tsx`) explicitly `import`ing `'react'` loads @types/react's ambient declarations for every
+  file.
+- [CARD-001] Contract-pinning tests (e.g. `test/packaging.test.ts`) should assert literal script/config
+  values, not just key presence, when the design names an exact regression string (here ADR-0003's
+  `tsc -b --noEmit` vs plain `tsc --noEmit`) that a presence-only check would let through silently.
 
 ## Glossary

@@ -3,12 +3,10 @@
 _Rendered by `/kanban`. Do not hand-edit below the header._
 
 **WIP / Gates:** wip_limit 3 · slice=auto · design=pr · deliver=auto
-_last rendered: 2026-07-17_
+_last rendered: 2026-07-18_
 
 ## Backlog
-- CARD-002 — Run lint, typecheck, tests and build on every pull request · backlog [M1]
 - CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · backlog [M1]
-- CARD-004 — Parse a card.md into the card model · backlog [M2]
 - CARD-005 — Build a board snapshot from the board directory · backlog [M2]
 - CARD-006 — Serve the parsed board over HTTP · backlog [M2]
 - CARD-007 — Push live snapshots over SSE · backlog [M2]
@@ -25,11 +23,12 @@ _last rendered: 2026-07-17_
 - CARD-018 — CLI flags and startup validation · backlog [M2]
 
 ## Slice
+- CARD-004 — Parse a card.md into the card model · slice [M2]
 
 ## Design
+- CARD-002 — Run lint, typecheck, tests and build on every pull request · design · task/002-ci-pull-request-gates-design [M1]
 
 ## Implement
-- CARD-001 — Scaffold the TypeScript package and toolchain · implement · task/001-scaffold-package-toolchain [M1] · rework: review panel (design, typescript)
 
 ## Test
 
@@ -40,13 +39,14 @@ _last rendered: 2026-07-17_
 ## Blocked
 
 ## Done
+- CARD-001 — Scaffold the TypeScript package and toolchain · delivered 2026-07-18 · PRs #1 (design) + #3 · 372 lines · 1 rework [M1]
 
 ## Split
 
 ## Superseded
 
 ## Milestones
-- M1 — Toolchain and delivery pipeline · 0/3 · in progress
-- M2 — Headless board API · 0/6 · not started
+- M1 — Toolchain and delivery pipeline · 1/3 · in progress
+- M2 — Headless board API · 0/6 · in progress
 - M3 — Live board UI · 0/6 · not started
 - M4 — Detail, milestones and activity · 0/3 · not started
