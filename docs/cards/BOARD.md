@@ -6,6 +6,7 @@ _Rendered by `/kanban`. Do not hand-edit below the header._
 _last rendered: 2026-07-18_
 
 ## Backlog
+- CARD-022 — Add milestone progress to the board snapshot · backlog [M2]
 - CARD-006 — Serve the parsed board over HTTP · backlog [M2]
 - CARD-007 — Push live snapshots over SSE · backlog [M2]
 - CARD-008 — Serve a card's phase docs · backlog [M2]
@@ -21,10 +22,10 @@ _last rendered: 2026-07-18_
 - CARD-018 — CLI flags and startup validation · backlog [M2]
 
 ## Slice
-- CARD-005 — Build a board snapshot from the board directory · slice [M2] · split proposed (2 children) — checking
 
 ## Design
-- CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · design · task/003-release-on-version-tag-design [M1]
+- CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · design · task/003-release-on-version-tag-design [M1] · checking
+- CARD-021 — Assemble a board snapshot from cards, config and parse errors · design · task/021-assemble-board-snapshot-design [M2]
 
 ## Implement
 
@@ -44,11 +45,12 @@ _last rendered: 2026-07-18_
 
 ## Split
 - CARD-004 — Parse a card.md into the card model → split into CARD-019, CARD-020 [M2]
+- CARD-005 — Build a board snapshot from the board directory → split into CARD-021, CARD-022 [M2]
 
 ## Superseded
 
 ## Milestones
 - M1 — Toolchain and delivery pipeline · 2/3 · in progress
-- M2 — Headless board API · 2/7 · in progress
+- M2 — Headless board API · 2/8 · in progress
 - M3 — Live board UI · 0/6 · not started
 - M4 — Detail, milestones and activity · 0/3 · not started

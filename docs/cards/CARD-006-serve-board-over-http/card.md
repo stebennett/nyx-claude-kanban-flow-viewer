@@ -7,7 +7,7 @@ title: Serve the parsed board over HTTP
 status: backlog
 phase: backlog
 right_sized: ""
-depends_on: [CARD-005]
+depends_on: [CARD-022]
 branch: ""
 worktree: ""
 design_pr_url: ""
