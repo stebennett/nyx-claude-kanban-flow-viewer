@@ -24,7 +24,7 @@ _last rendered: 2026-07-18_
 ## Slice
 
 ## Design
-- CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · design · task/003-release-on-version-tag-design [M1] · checking
+- CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · design · task/003-release-on-version-tag-design [M1] · design PR #28 open
 - CARD-021 — Assemble a board snapshot from cards, config and parse errors · design · task/021-assemble-board-snapshot-design [M2]
 
 ## Implement

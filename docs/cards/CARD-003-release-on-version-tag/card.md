@@ -10,10 +10,10 @@ right_sized: true
 depends_on: [CARD-001, CARD-002]
 branch: task/003-release-on-version-tag-design
 worktree: .worktrees/CARD-003-design
-design_pr_url: ""
+design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/28
 pr_urls: []
 split_slices: 0
-adrs: []
+adrs: [ADR-0007]
 reworks:
   slice: 0
   design: 0
