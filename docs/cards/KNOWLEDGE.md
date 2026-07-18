@@ -162,5 +162,14 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   --numstat` → the 542-line pair busts the 500 cap on its own) and is correctly **advisory**, not a
   park — `DLV-SIZE` on an already-split-and-refused card verdicts `pass` with the breach recorded, since
   we never split a split.
+- [CARD-019→CARD-020] `parse-card.ts`'s `extractSection(content, heading)` interpolates `heading`
+  **unescaped** into a `RegExp` — safe for CARD-019's literal callers (`'Why'`/`'Notes'`/`'Acceptance
+  criteria'`) but a latent trap the review flagged (advisory, un-actioned). **CARD-020 is the likely
+  first computed-heading caller** (its phase-doc scan reuses the parser's helpers): if it ever passes a
+  heading containing regex metacharacters, escape it (or literal-match) — do not extend the unescaped
+  interpolation. Other un-actioned CARD-019 advisories (all harmless for /kanban's own inputs, logged
+  for /retro): `asDateString` shifts the day for a timestamp carrying a time+offset; `countCriteria`
+  counts a `- [x]` inside a fenced code block; `asNonNegInt`/`asNumberOrNull` don't enforce their
+  name's integer/non-negative constraint.
 
 ## Glossary

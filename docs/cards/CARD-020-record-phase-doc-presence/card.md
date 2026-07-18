@@ -4,12 +4,12 @@ type: task
 layer: domain
 reqs: [REQ-025]
 title: Record phase-doc presence in the card model
-status: backlog
-phase: backlog
+status: design
+phase: design
 right_sized: true
 depends_on: [CARD-019]
-branch: ""
-worktree: ""
+branch: task/020-record-phase-doc-presence-design
+worktree: .worktrees/CARD-020-design
 design_pr_url: ""
 pr_urls: []
 split_slices: 0
@@ -23,7 +23,7 @@ reworks:
 review_lenses_failed: []
 estimated_lines: 145
 actual_lines: ""
-started: ""
+started: 2026-07-18
 delivered: ""
 created: 2026-07-18
 ---
