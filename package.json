@@ -21,7 +21,9 @@
     "build:server": "tsc -b tsconfig.server.json --force",
     "build": "npm run build:ui && npm run build:server"
   },
-  "dependencies": {},
+  "dependencies": {
+    "gray-matter": "^4.0.3"
+  },
   "devDependencies": {
     "typescript": "^5.9.0",
     "eslint": "^9.0.0",
@@ -38,6 +40,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0"
+    "@types/react-dom": "^19.0.0",
+    "fast-check": "^3.23.0"
   }
 }
