@@ -4,12 +4,12 @@ type: task
 layer: domain
 reqs: [REQ-025]
 title: Record phase-doc presence in the card model
-status: design
-phase: design
+status: implement
+phase: implement
 right_sized: true
 depends_on: [CARD-019]
-branch: task/020-record-phase-doc-presence-design
-worktree: .worktrees/CARD-020-design
+branch: task/020-record-phase-doc-presence
+worktree: .worktrees/CARD-020-impl
 design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/20
 pr_urls: []
 split_slices: 0
