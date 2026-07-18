@@ -10,7 +10,7 @@ right_sized: true
 depends_on: [CARD-019, CARD-020]
 branch: task/021-assemble-board-snapshot-design
 worktree: .worktrees/CARD-021-design
-design_pr_url: ""
+design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/29
 pr_urls: []
 split_slices: 0
 adrs: [ADR-0008]
