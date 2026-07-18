@@ -4,12 +4,12 @@ type: task
 layer: infra
 reqs: [REQ-036]
 title: Run lint, typecheck, tests and build on every pull request
-status: design
-phase: design
+status: implement
+phase: implement
 right_sized: true
 depends_on: [CARD-001]
-branch: task/002-ci-pull-request-gates-design
-worktree: .worktrees/CARD-002-design
+branch: task/002-ci-pull-request-gates
+worktree: .worktrees/CARD-002-impl
 design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/6
 pr_urls: []
 split_slices: 0
