@@ -1,77 +1,69 @@
-## CARD-001 — design: Scaffold the TypeScript package and toolchain   [task · infra]
+## CARD-001 — Scaffold the TypeScript package and toolchain   [task · infra]
+
+Implementation PR. The design PR (#1) merged; this carries the code plus its phase docs.
 
 ### Why
 
 Nothing in this project can be linted, typechecked, tested, built or released until the package
-exists. This card establishes the toolchain floor — package.json, TypeScript configs, ESLint,
-Vitest and Vite, plus minimal server and UI entry points — so that every gate REQ-036 requires has
-something real to run against. It owns the *gates*, not the product: CARD-002 wires these same
-scripts into CI, CARD-003 publishes the artifact they produce, and CARD-004+ implement the
-parser/server/UI against the layout fixed here.
+exists. This card establishes the toolchain floor — `package.json`, TypeScript configs, ESLint,
+Vitest and Vite, plus minimal server and UI entry points — so every gate REQ-036 requires has
+something real to run against. It owns the *gates*, not the product: CARD-002 wires these scripts
+into CI, CARD-003 publishes the artifact they produce, CARD-004+ implement the parser/server/UI
+against the layout fixed here.
 
-### Design summary
+### What changed
 
-- **Two builders, one `dist`, no runtime dependencies.** `tsc -b tsconfig.server.json` emits
-  `src/server` → `dist/server`; Vite emits `src/ui` → `dist/ui`. Published as `files: ["dist"]`
-  with `bin` at `dist/server/index.js`, so `npx` does zero build work (REQ-007).
-- **Per-half TypeScript projects.** The server needs `module: NodeNext` + Node libs; the UI needs
-  `moduleResolution: bundler` + DOM libs + JSX. One flat config would force the union and let
-  `document` typecheck inside server code — the split enforces the REQ-006 boundary by construction.
-- **A gate that cannot fail is not a gate.** Every acceptance criterion is verified by *mutation*
-  during implementation (inject an error, watch the gate go red), not by observing a green run.
-- **One real pure function** (`uiDistDir`) is the seam where the build-layout decision becomes
-  code; `test/packaging.test.ts` pins `bin`, tsc's outDir, Vite's outDir and that function to each
-  other so they cannot drift apart silently.
-- **React is a devDependency**, not a dependency — Vite bundles it into `dist/ui` at build time, so
-  the published package carries no runtime copy and `dependencies` stays empty.
+- **`package.json`** — ESM (`type: module`), `engines.node >= 20`, **empty `dependencies`** (React is
+  a devDependency; Vite bundles it at build time), `bin: { kanban-flow-viewer: dist/server/index.js }`,
+  `files: ["dist"]`, and the four gate scripts. `package-lock.json` committed.
+- **TypeScript (5-project layout)** — `tsconfig.base.json` (strict family) + per-half `server`/`app`/
+  `node`/`test` projects under a `files: []` solution root. `typecheck` runs `tsc -b --noEmit`, which
+  actually checks all projects (plain `tsc --noEmit` at the root is a false green — ADR-0003).
+- **`src/server/paths.ts`** — the pure `uiDistDir(import.meta.url)` seam (dist/server → dist/ui),
+  100% covered; `src/server/index.ts` — placeholder CLI entry (shebang, usage line, exit 64).
+- **`src/ui/`** — placeholder React entry points; `vite.config.ts` (build + Vitest block);
+  `eslint.config.js` (flat config covering both halves); `index.html`.
+- **`test/packaging.test.ts`** — pins the build contract: `bin` ↔ tsc outDir ↔ Vite outDir ↔
+  `uiDistDir` (the "seam" assertion), literal gate-command strings, and a tarball-set assertion that
+  **no `*.test.*` ships**.
 
-### Acceptance criteria (sharpened)
+### Acceptance criteria
 
-- **AC-1** — On a clean checkout, `npm ci` exits 0 against the committed lockfile, then
-  `npm run lint` exits 0. ESLint reports at least one error when a violation exists in **either**
-  `src/server` or `src/ui`. (REQ-036)
-- **AC-2** — `npm run typecheck` exits 0 **and actually checks**: a type error introduced in any of
-  `src/server/paths.ts`, `src/ui/App.tsx` or `vite.config.ts` makes it exit non-zero. (REQ-036)
-- **AC-3** — `npm test` runs Vitest and exits 0 with ≥1 real test; `npm run test:coverage` reports
-  ≥90% on the core logic layer. (REQ-036, Testing)
-- **AC-4** — `npm run build` exits 0 and produces `dist/ui/index.html` plus a hashed JS asset, and
-  `dist/server/index.js` with an executable shebang. (REQ-006, REQ-007)
-- **AC-5** — package.json declares `bin: { "kanban-flow-viewer": "dist/server/index.js" }` and
-  `files: ["dist"]`; `npm pack --dry-run` lists both in the tarball. (REQ-006, REQ-007)
+- [x] `npm ci && npm run lint` exits zero on a clean checkout (REQ-036)
+- [x] `npm run typecheck` (`tsc -b --noEmit`) exits zero **and actually checks** (REQ-036; ADR-0003)
+- [x] `npm test` runs Vitest and passes — 12 tests (REQ-036)
+- [x] `npm run build` produces the UI bundle inside the package (REQ-006, REQ-007)
+- [x] `package.json` declares the `kanban-flow-viewer` bin and a `files` list including the built
+  bundle; `npm pack` ships both `dist/server/index.js` and `dist/ui/index.html`, and no test files
+  (REQ-006, REQ-007)
 
-### ADRs in this PR
+### Testing
 
-- **ADR-0001** — ESM-only package targeting Node 20+
-- **ADR-0002** — Build and publish layout: two builders, one dist, no runtime dependencies
-- **ADR-0003** — Typecheck runs `tsc -b --noEmit` across per-half projects, not `tsc --noEmit`
+All gates green on a clean tree (`rm -rf node_modules dist coverage && npm ci`): lint 0, typecheck 0,
+**12/12 tests**, **100% coverage** on the core logic layer (`paths.ts`, ≥90% target), build produces
+the hashed UI bundle + shebang'd server entry, `node dist/server/index.js` prints usage and exits 64,
+`npm pack --dry-run` lists 8 files (62.4 kB) with **zero `*.test.*`**. Every gate is mutation-proven
+in `implement.md` — a type error injected into each of `paths.ts`/`App.tsx`/`vite.config.ts` turns the
+typecheck red; plain `tsc --noEmit` stays green (the documented false green).
 
-### Open questions / decisions deferred
+### Review
 
-The designer raised no open questions. Two items need your attention:
+Full 8-lens panel. The first run found **two blocking issues**, both fixed and re-reviewed clean:
+1. **Compiled test files shipped in the npm tarball** (`tsconfig.server.json` globbed `*.test.ts` with
+   no exclude). Fixed with `exclude: ["**/*.test.ts"]` + a matching `tsconfig.test.json` include so
+   typecheck coverage is preserved; now guarded by the tarball-set assertion.
+2. **Node globals leaked into the UI project** (`tsconfig.app.json` had no `types` array, so
+   `@types/node` auto-loaded). Fixed by pinning `types: ["vite/client"]` — the server/UI compiler
+   boundary now holds by construction, as ADR-0002 claims.
 
-**AC-2 deviates from the card's literal wording — deliberately.** The card specifies the typecheck
-gate as `tsc --noEmit`. Under the multi-tsconfig layout REQ-006's server/UI split forces, the root
-config is a solution file (`files: []` + `references`), so `tsc --noEmit` resolves **zero input
-files and exits zero** — a gate that passes on a codebase full of type errors. CARD-002 wires this
-exact script into CI, so taking AC-2 literally would silently disable REQ-036's type gate for the
-life of the project. The gate is therefore `tsc -b --noEmit`, recorded in ADR-0003 and proven by
-three type-error mutations rather than asserted. The design check verified the mechanism
-independently (TS18003 is suppressed when a config declares `files`/`references`, and non-build
-`tsc` does not traverse `references`) and judged the deviation justified, minimal and properly
-recorded.
+Advisory items left for their natural home (a `uiDistDir` JSDoc precondition note for CARD-005; a
+`CLAUDE.md` staleness refresh — that file is edit-protected). No blocking findings remain.
 
-**Follow-up for the driver:** `docs/spec.md` REQ-036 still names `tsc --noEmit`. CARD-002 designs
-CI from REQ-036, so the spec text should be amended via `/requirement` to stop contradicting the
-gate ADR-0003 establishes. Left as-is here — amending the spec is outside this card's authority.
+### Knowledge
 
-The design check passed with **no blocking findings** and four advisories, carried in
-`design-check.md` in this diff: task 2's mutation step is sequenced before the files it mutates
-exist (task-list ordering, fix at implementation); the spec/REQ-036 wording residue above;
-`JSX.Element` in an interface sketch should be `React.JSX.Element` under @types/react 19; and
-design.md exceeds the ≤150-line advisory budget.
+New `KNOWLEDGE.md` entries (this card): pin `types` on every leaf tsconfig or Node globals leak into
+the UI; exclude `*.test.ts` from any emitting tsc project or test code ships in the tarball;
+`@types/react`'s namespace augmentation is program-wide; contract tests should assert literal values.
+ADR-0001/0002/0003 (ESM-only, build layout, typecheck topology) landed with the design PR.
 
-Full design: `docs/cards/CARD-001-scaffold-package-toolchain/design.md` (in this diff). Merging this
-PR approves the design and unblocks implementation — the implementation branch is cut from main
-after this merges, and the code arrives as a second PR.
-
-🤖 Design delivered via /kanban
+🤖 Card delivered via /kanban
