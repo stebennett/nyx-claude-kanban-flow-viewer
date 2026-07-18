@@ -76,6 +76,22 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   `v$(node -p "require('./package.json').version")` and `exit 1`s on mismatch, as the FIRST publish-job
   step (after checkout, before build/publish) — so a mismatched or un-bumped version publishes nothing.
   The trigger glob handles shape; the guard handles equality.
+- [CARD-021] `BoardSnapshot`/`BoardConfig`/`ParseError` (the `/api/board` JSON contract) live in the
+  dependency-free `card-model.ts` beside `CardModel` (ADR-0005), NOT in `build-snapshot.ts` (which pulls
+  `fs` + gray-matter) — so the UI can `import type` the API contract without crossing the src/server↔src/ui
+  boundary. CARD-022 adds `milestones` to `BoardSnapshot` additively; CARD-006/007/017 reuse these types.
+- [CARD-021] `parseError.path` is board-dir-relative with a **forward-slash literal** (`` `${dirName}/card.md` ``,
+  `config.md`), never absolute — deterministic across machines and never leaks a tmp/checkout path into the
+  `/api/board` JSON. Build it with a `/` string literal, not `path.join` (OS separator). Assert
+  `not.toContain(boardDir)` in tests.
+- [CARD-021] `DEFAULT_WIP_LIMIT = 3` (matches kanban-init's config default) applies when `config.md` is
+  absent OR `wip_limit` is missing/non-numeric; `wip_limit: 0` passes through (0 ≠ missing). config.md
+  ABSENT degrades silently to the default; config.md MALFORMED routes to `parseErrors('config.md')` + default
+  — the distinction is deliberate (REQ-014 permits a board of only CARD-* dirs). See [[adr-0008]] (the board
+  walk is total).
+- [CARD-021] `buildSnapshot` sorts the `CARD-*` dir list before walking, so `cards`/`parseErrors` come out
+  deterministically ordered (stable client diffing, REQ-009). A `CARD-*` dir missing `card.md` is skipped
+  (not a parseError).
 
 ## Gotchas
 
