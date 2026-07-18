@@ -198,6 +198,17 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   server module (transitively gray-matter-adjacent) into the browser bundle. **CARD-011 must either give
   the constant a UI-reachable home (a shared boundary-neutral module) or re-declare the flow order in the
   UI with an accepted duplication** — do not import `PHASE_NAMES` straight from `src/server` into `src/ui`.
+- [CARD-002] **Regenerating `package-lock.json` on a single-platform dev machine (macOS/ARM here) can
+  silently collapse npm's `optionalDependencies` platform matrix for native-binary packages** (rollup,
+  esbuild, …) down to just that platform — breaking `npm ci` on any OTHER platform, incl. the
+  `ubuntu-latest` CI runner (`Cannot find module @rollup/rollup-linux-x64-gnu` at `vite build`). This
+  card's own first CI run caught it (real DLV-CI red, not flaky). **Before committing a regenerated
+  lockfile, verify the full matrix survives:** `grep -c 'node_modules/@rollup/rollup-' package-lock.json`
+  should stay **~25**, not 1. Reliable fix (npm 11): restore the complete lockfile from `main`
+  (`git show origin/main:package-lock.json > package-lock.json`) then `npm install --package-lock-only`
+  to add the new dep while preserving every platform binary — do NOT `rm package-lock.json && npm install`
+  from scratch on one platform. (Note: `js-yaml` was already in `main`'s lockfile as a transitive dep of
+  gray-matter, so adding it as a direct devDep needed no new resolution — only `@types/js-yaml` was new.)
 - [CARD-020] `new Set(entries ?? [])` — the `?? []` fallback is **behaviorally inert**: `new Set(undefined)`
   already returns an empty Set (V8 native tolerance), so a test asserting identical output for `undefined`
   vs `[]` entries does NOT prove the `??` branch is load-bearing (verified in review: removing `?? []`

@@ -4,8 +4,8 @@ type: task
 layer: domain
 reqs: [REQ-003, REQ-004, REQ-019, REQ-033]
 title: Build a board snapshot from the board directory
-status: backlog
-phase: backlog
+status: slice
+phase: slice
 right_sized: ""
 depends_on: [CARD-019, CARD-020]
 branch: ""
@@ -23,7 +23,7 @@ reworks:
 review_lenses_failed: []
 estimated_lines: 390
 actual_lines: ""
-started: ""
+started: 2026-07-18
 delivered: ""
 created: 2026-07-17
 ---
