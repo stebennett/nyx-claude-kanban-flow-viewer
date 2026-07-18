@@ -23,6 +23,13 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
 - [CARD-004] The canonical phase-doc filename set (slice/design/implement/test/review/deliver + their
   `*-check` docs) is defined once in the parser (CARD-020, for REQ-025's presence scan); CARD-011
   (blocked-flag rendering) and CARD-018 (serving phase docs) should reuse it rather than re-deriving.
+- [CARD-002] CI lives in ONE reusable workflow `.github/workflows/ci.yml` with
+  `on: [pull_request(branches: main), workflow_call]`; the four gates run as sequential steps in a
+  single Node 20 ubuntu job after `npm ci`. CARD-003's release reuses the gates via
+  `uses: ./.github/workflows/ci.yml` — the filename and job are a cross-card contract, do not rename.
+- [CARD-002] CI caches only `~/.npm` via `actions/setup-node` `cache: npm` (keyed on package-lock.json);
+  it never adds `actions/cache` for `dist/` or `*.tsbuildinfo`. `build:server`'s `--force` is the belt,
+  no-build-state-cache is the suspenders against the stale-`.tsbuildinfo` false green (ADR-0003).
 
 ## Gotchas
 
@@ -80,5 +87,12 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
 - [CARD-001] Contract-pinning tests (e.g. `test/packaging.test.ts`) should assert literal script/config
   values, not just key presence, when the design names an exact regression string (here ADR-0003's
   `tsc -b --noEmit` vs plain `tsc --noEmit`) that a presence-only check would let through silently.
+- [CARD-002] Gate-isolation seeds for proving each CI gate goes red independently (each on clean main,
+  only that change): **lint** = unused local in `src/server/paths.ts` (eslint `no-unused-vars` fires; base
+  tsconfig has no `noUnusedLocals` and eslint uses `recommended` not type-checked, so lint-only);
+  **typecheck** = an EXPORTED const with a mismatched type (exported → `no-unused-vars` stays silent, no
+  type-aware lint rule → lint green, `tsc -b --noEmit` red); **test** = a failing `expect(2).toBe(3)`
+  (valid TS+lint, vitest red); **build** = point `index.html`'s `<script src>` at a missing file
+  (tsc/eslint/vitest never read index.html; vite build red).
 
 ## Glossary

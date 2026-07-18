@@ -6,7 +6,6 @@ _Rendered by `/kanban`. Do not hand-edit below the header._
 _last rendered: 2026-07-18_
 
 ## Backlog
-- CARD-019 — Parse card.md frontmatter and body into the card model · backlog [M2]
 - CARD-020 — Record phase-doc presence in the card model · backlog [M2]
 - CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · backlog [M1]
 - CARD-005 — Build a board snapshot from the board directory · backlog [M2]
@@ -27,7 +26,8 @@ _last rendered: 2026-07-18_
 ## Slice
 
 ## Design
-- CARD-002 — Run lint, typecheck, tests and build on every pull request · design · task/002-ci-pull-request-gates-design [M1] · checking design
+- CARD-002 — Run lint, typecheck, tests and build on every pull request · design · task/002-ci-pull-request-gates-design [M1] · design check pass · opening PR
+- CARD-019 — Parse card.md frontmatter and body into the card model · design · task/019-parse-card-frontmatter-body-design [M2]
 
 ## Implement
 
