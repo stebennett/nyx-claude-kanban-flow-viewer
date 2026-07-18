@@ -4,8 +4,8 @@ type: task
 layer: infra
 reqs: [REQ-006, REQ-007, REQ-036]
 title: Scaffold the TypeScript package and toolchain
-status: review
-phase: review
+status: implement
+phase: implement
 right_sized: true
 depends_on: []
 branch: task/001-scaffold-package-toolchain
@@ -17,10 +17,10 @@ adrs: [ADR-0001, ADR-0002, ADR-0003]
 reworks:
   slice: 0
   design: 0
-  implement: 0
+  implement: 1
   split: 0
   deliver: 0
-review_lenses_failed: []
+review_lenses_failed: [design, typescript]
 estimated_lines: 360
 actual_lines: ""
 started: 2026-07-17
