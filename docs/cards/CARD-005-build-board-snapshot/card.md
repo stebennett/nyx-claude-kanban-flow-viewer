@@ -7,7 +7,7 @@ title: Build a board snapshot from the board directory
 status: backlog
 phase: backlog
 right_sized: ""
-depends_on: [CARD-004]
+depends_on: [CARD-019, CARD-020]
 branch: ""
 worktree: ""
 design_pr_url: ""
