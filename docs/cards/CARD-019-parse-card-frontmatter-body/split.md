@@ -15,7 +15,7 @@ Bootstrapped a throwaway worktree off `origin/main`, applied the WHOLE original 
 `index.ts`). The environment is sound — every red below is a real statement about the code.
 
 ## Coupling analysis (why no carve exists)
-Ground truth (measured, `--no-renames`): 8 non-excluded changed paths, 601 lines.
+Ground truth (measured, `--no-renames`): 6 non-excluded changed paths, 601 lines.
 
 | path | type | lines |
 |---|---|---|
