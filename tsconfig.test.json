@@ -8,5 +8,12 @@
     "noEmit": true,
     "composite": true
   },
-  "include": ["test/**/*.ts", "src/server/**/*.test.ts", "src/server/paths.ts", "vite.config.ts"]
+  "include": [
+    "test/**/*.ts",
+    "src/server/**/*.test.ts",
+    "src/server/paths.ts",
+    "src/server/card-model.ts",
+    "src/server/parse-card.ts",
+    "vite.config.ts"
+  ]
 }
