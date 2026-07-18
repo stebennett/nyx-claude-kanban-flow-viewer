@@ -4,12 +4,12 @@ type: task
 layer: domain
 reqs: [REQ-002, REQ-006, REQ-020, REQ-021]
 title: Parse card.md frontmatter and body into the card model
-status: backlog
-phase: backlog
+status: design
+phase: design
 right_sized: true
 depends_on: [CARD-001]
-branch: ""
-worktree: ""
+branch: task/019-parse-card-frontmatter-body-design
+worktree: .worktrees/CARD-019-design
 design_pr_url: ""
 pr_urls: []
 split_slices: 0
@@ -23,7 +23,7 @@ reworks:
 review_lenses_failed: []
 estimated_lines: 300
 actual_lines: ""
-started: ""
+started: 2026-07-18
 delivered: ""
 created: 2026-07-18
 ---
