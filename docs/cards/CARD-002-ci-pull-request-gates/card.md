@@ -10,7 +10,7 @@ right_sized: true
 depends_on: [CARD-001]
 branch: task/002-ci-pull-request-gates-design
 worktree: .worktrees/CARD-002-design
-design_pr_url: ""
+design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/6
 pr_urls: []
 split_slices: 0
 adrs: [ADR-0004]
