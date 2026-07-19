@@ -152,4 +152,30 @@ describe('release contract', () => {
       expect(words).not.toEqual(['npm', 'i']);
     }
   });
+
+  it('creates a GitHub Release with generated notes', () => {
+    const { workflow } = loadWorkflow();
+    const steps = workflow.jobs?.['publish']?.steps ?? [];
+
+    const releaseStep = steps.find(
+      (step) => step.run?.includes('gh release create') && step.run?.includes('--generate-notes'),
+    );
+
+    expect(releaseStep).toBeDefined();
+    expect(releaseStep?.env?.['GITHUB_TOKEN']).toBeDefined();
+  });
+
+  it('has no gate-bypassing escape hatches', () => {
+    const { workflow } = loadWorkflow();
+
+    for (const job of Object.values(workflow.jobs ?? {})) {
+      for (const step of job.steps ?? []) {
+        expect(step['continue-on-error']).not.toBe(true);
+      }
+    }
+    expect(workflow.jobs?.['gates']?.if).toBeUndefined();
+    for (const step of workflow.jobs?.['publish']?.steps ?? []) {
+      expect(step.if).toBeUndefined();
+    }
+  });
 });
