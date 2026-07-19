@@ -4,8 +4,8 @@ type: task
 layer: infra
 reqs: [REQ-007, REQ-037]
 title: Publish npm package and GitHub Release on a vX.Y.Z tag
-status: test
-phase: test
+status: review
+phase: review
 right_sized: true
 depends_on: [CARD-001, CARD-002]
 branch: task/003-release-on-version-tag
