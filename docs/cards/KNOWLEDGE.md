@@ -303,3 +303,7 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   either alone still passed. To isolate a guard, the fixture must exclude everything else that happens
   to invoke it (here: omit `config.md`), and you must verify by deleting ONLY the guard-under-test and
   seeing the test go red.
+- [CARD-021] `split.md`'s SPL-GREEN evidence must be **pasted command + raw terminal output** per gate
+  (vitest summary banner, tsc/eslint/vite output) for the full-branch bootstrap AND each slice's scratch
+  build — a narrative summary ("npm test 54/54", "lint clean") FAILS split-check even when the numbers
+  are internally consistent. Match the fenced-real-output convention `test.md` already uses.
