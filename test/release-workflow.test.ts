@@ -72,4 +72,24 @@ describe('release contract', () => {
 
     expect(workflow.jobs?.['publish']?.needs).toContain('gates');
   });
+
+  it('guards tag against package.json version', () => {
+    const { workflow } = loadWorkflow();
+    const steps = workflow.jobs?.['publish']?.steps ?? [];
+
+    const guardStep = steps.find(
+      (step) =>
+        step.run?.includes("require('./package.json').version") &&
+        step.run?.includes('exit 1'),
+    );
+
+    expect(guardStep).toBeDefined();
+    const referencesRefName =
+      guardStep?.run?.includes('GITHUB_REF_NAME') ||
+      guardStep?.run?.includes('github.ref_name') ||
+      Object.values(guardStep?.env ?? {}).some((value) =>
+        String(value).includes('github.ref_name'),
+      );
+    expect(referencesRefName).toBe(true);
+  });
 });
