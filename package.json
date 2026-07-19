@@ -9,6 +9,10 @@
   "bin": {
     "kanban-flow-viewer": "dist/server/index.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stebennett/nyx-claude-flow-viewer.git"
+  },
   "files": [
     "dist"
   ],
