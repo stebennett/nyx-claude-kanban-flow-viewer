@@ -197,6 +197,15 @@ describe('release contract', () => {
 
     expect(releaseStep).toBeDefined();
     expect(releaseStep?.env?.['GITHUB_TOKEN']).toBe('${{ secrets.GITHUB_TOKEN }}');
+
+    // Presence-only checks above would still pass with a hardcoded/wrong tag argument
+    // (e.g. `gh release create "v0.0.0-wrong" --generate-notes`) — AC-4 requires the
+    // Release be created FOR THE PUSHED TAG, so pin that the release command itself
+    // references it, not just that a release step with generated notes exists somewhere.
+    const referencesPushedTag =
+      releaseStep?.run?.includes('$GITHUB_REF_NAME') ||
+      releaseStep?.run?.includes('github.ref_name');
+    expect(referencesPushedTag).toBe(true);
   });
 
   it('has no gate-bypassing escape hatches', () => {
