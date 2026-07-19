@@ -4,8 +4,8 @@ type: task
 layer: domain
 reqs: [REQ-003, REQ-019, REQ-033]
 title: Assemble a board snapshot from cards, config and parse errors
-status: review
-phase: review
+status: implement
+phase: implement
 right_sized: true
 depends_on: [CARD-019, CARD-020]
 branch: task/021-assemble-board-snapshot
@@ -17,10 +17,10 @@ adrs: [ADR-0008]
 reworks:
   slice: 0
   design: 0
-  implement: 0
+  implement: 1
   split: 0
   deliver: 0
-review_lenses_failed: []
+review_lenses_failed: [design, functionality, security, tests]
 estimated_lines: 340
 actual_lines: ""
 started: 2026-07-18
