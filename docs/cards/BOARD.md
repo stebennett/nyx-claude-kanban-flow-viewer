@@ -30,10 +30,10 @@ _last rendered: 2026-07-19_
 ## Test
 
 ## Review
-- CARD-021 — Assemble a board snapshot from cards, config and parse errors · review · task/021-assemble-board-snapshot [M2] · re-running 4 lenses
-- CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · review · task/003-release-on-version-tag [M1] · re-running [tests] lens (final)
+- CARD-021 — Assemble a board snapshot from cards, config and parse errors · review · task/021-assemble-board-snapshot [M2] · panel pass · split: 507 > 500 → pr-splitter
 
 ## Deliver
+- CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · deliver · task/003-release-on-version-tag [M1] · opening implementation PR
 
 ## Blocked
 

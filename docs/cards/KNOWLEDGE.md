@@ -101,6 +101,13 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   a false green in local dev. The explicit `.sort()` on the dirName list (REQ-009 determinism) must
   be verified by reasoning about the contract, not just by a locally-green test, on filesystems that
   preserve insertion order.
+- [CARD-021] fast-check property tests pin an explicit `seed` (see `parse-card.test.ts`'s
+  `{ seed: 20260718, numRuns: N }`) for reproducible CI failures — carry the seed convention forward
+  on every new `fc.assert` call.
+- [CARD-003] Workflow contract tests pin step ORDER via `findIndex` chains (mirroring
+  `test/ci-workflow.test.ts`) for every sequence where reordering silently changes behavior — and the
+  chain must be EXTENDED to include newly-added terminal steps (e.g. a `gh release create` step after
+  `npm publish`), not just the steps present when the order test was first written.
 
 ## Gotchas
 
