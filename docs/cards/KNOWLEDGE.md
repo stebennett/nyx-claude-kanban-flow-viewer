@@ -96,6 +96,11 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   step before the checkout/setup-node steps that make it executable — deliberate increment ordering
   from the design task list, not a bug; the workflow is only semantically complete (checkout precedes
   the guard) after task 4's commit.
+- [CARD-021] `readdirSync`'s entry order is NOT guaranteed sorted across filesystems — macOS APFS
+  happened to return `CARD-*` dirs already alphabetical locally, which would make a missing `.sort()`
+  a false green in local dev. The explicit `.sort()` on the dirName list (REQ-009 determinism) must
+  be verified by reasoning about the contract, not just by a locally-green test, on filesystems that
+  preserve insertion order.
 
 ## Gotchas
 
@@ -262,3 +267,14 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   after `npm ci` on macOS/ARM, `grep -c 'node_modules/@rollup/rollup-' package-lock.json` must stay
   ~25. A regenerated lockfile collapsing it to 1 (darwin-arm64 only) breaks `npm run build` (vite)
   on CI's ubuntu runner ONLY — verify the count before running any test/build step in a fresh card.
+- [CARD-021] gray-matter's `matter()` keeps a module-level cache keyed by the exact input string and
+  populates that entry BEFORE parsing — so a parse that then throws (malformed YAML) leaves a
+  poisoned, empty-data cache entry for that string. A later call with byte-identical content (even
+  from an unrelated card) silently returns the poisoned entry instead of re-throwing. Because
+  `buildSnapshot` re-parses on every debounced walk (REQ-008) in one long-lived process, an UNCHANGED
+  persistently-malformed `card.md` would `parseError` on the first walk but silently "self-heal" with
+  empty defaults on every later walk. Fix: call `matter.clearCache()` before every `matter()`-consuming
+  call (accessed via a narrow local cast — gray-matter's bundled `.d.ts` omits it, like `matter.cache`,
+  per [CARD-019] on why `@types/gray-matter` isn't added). CARD-007 (the SSE watcher, the other
+  repeated caller of the card-parsing path) must heed this if it ever calls `matter()`/`parseCard()`
+  directly rather than through `buildSnapshot`.
