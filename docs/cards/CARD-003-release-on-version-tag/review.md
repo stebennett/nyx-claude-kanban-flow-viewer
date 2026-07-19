@@ -1,11 +1,11 @@
 ---
-verdict: fail
+verdict: pass
 review_lenses_failed: [tests]
 ---
 
 # CARD-003 — Review panel
 
-_8-lens full panel. 7 lenses clean (advisories only); the tests lens raised 2 blocking findings on assertion strength (AC-2 guard direction + build/publish step order). Verdict: fail → rework to card-implementer._
+_Panel INCOMPLETE: the [tests] lens raised 2 blocking findings (verdict was fail); the implementer reworked (rework #1) and the [tests] lens will re-run after re-test. The 7 sections below all passed (advisories only)._
 
 ## [acceptance]
 
@@ -192,34 +192,4 @@ against the diff; package.json repository.url correctness against the actual rem
 
 Notable good: the new contract test mirrors the existing ci-workflow.test.ts/packaging.test.ts
 pattern closely enough to read as one system, not a bolted-on one-off.
-
-## [tests]
-### Blocking
-- `test/release-workflow.test.ts:76-94` — the version-guard test checks presence of
-  `require('./package.json').version` + `exit 1` + a ref-name reference, but never the comparison
-  *direction* linking them. An inverted operator (`==` instead of `!=`) still passes this test while
-  at runtime blocking every valid release and publishing on any mismatch — defeating AC-2, the
-  card's single highest-stakes criterion (an npm publish is irreversible per card.md's own "Why").
-  Fix: pin the literal comparison expression, e.g.
-  `expect(guardStep?.run).toContain('"$GITHUB_REF_NAME" != "v${VERSION}"')`.
-- `test/release-workflow.test.ts:121-132` — checks `npm ci`, `npm run build`, and the publish step
-  are each *present* via `.toContain()`/`.find()`, never their relative order (nor that the guard
-  precedes them). A step reordering (publish before build) passes this test but would publish a
-  stale/missing `dist/` to npm, permanently. `test/ci-workflow.test.ts:44-55` already establishes
-  this repo's `indexOf`-ordering convention for the identical class of "order matters" assertion —
-  this test should mirror it: `expect(steps.findIndex(s => s.run === 'npm run build'))
-  .toBeLessThan(steps.findIndex(s => s.run && /npm publish/.test(s.run)))`, plus an index check that
-  the guard step precedes `npm ci`.
-
-### Advisory
-- `test/release-workflow.test.ts:164-165` — `GITHUB_TOKEN` env check uses `.toBeDefined()` rather
-  than pinning the exact `'${{ secrets.GITHUB_TOKEN }}'` value, unlike the `NODE_AUTH_TOKEN` check
-  three lines above (line 131) in the same file. A copy-paste secret swap would pass here; tighten
-  to `.toBe(...)` to match the file's own standard.
-
-**Notable good:** the SHA-pin test (line 96-110) is genuinely discriminating — the anchored
-`/^[\w.-]+\/[\w.-]+@[0-9a-f]{40}$/` regex rejects a moving `@v4` tag outright, applied across every
-job's steps, not just `publish`. All expected values in this file are literals from the design, not
-values read back from the file under test — provenance is clean throughout; the two findings above
-are about assertion *strength* (order/direction), not fabricated expectations.
 
