@@ -26,10 +26,10 @@ _last rendered: 2026-07-19_
 ## Design
 
 ## Implement
-- CARD-021 — Assemble a board snapshot from cards, config and parse errors · implement · task/021-assemble-board-snapshot [M2] · rework: 4 lenses (1/2)
-- CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · implement · task/003-release-on-version-tag [M1] · rework: tests lens (2/2)
 
 ## Test
+- CARD-021 — Assemble a board snapshot from cards, config and parse errors · test · task/021-assemble-board-snapshot [M2] · re-test after rework #1
+- CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · test · task/003-release-on-version-tag [M1] · re-test after rework #2
 
 ## Review
 

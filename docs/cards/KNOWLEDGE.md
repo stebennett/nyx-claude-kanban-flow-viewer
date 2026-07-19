@@ -278,3 +278,15 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   per [CARD-019] on why `@types/gray-matter` isn't added). CARD-007 (the SSE watcher, the other
   repeated caller of the card-parsing path) must heed this if it ever calls `matter()`/`parseCard()`
   directly rather than through `buildSnapshot`.
+- [CARD-021] `chmod 000` on a dir reliably simulates an unreadable-directory failure (EACCES) for a
+  totality/permission test — works non-root locally and on CI's non-root ubuntu-latest runner, and
+  even a root-run `chmod 000` still blocks directory traversal (the execute-bit search check isn't
+  bypassed by DAC_OVERRIDE when no execute bit is set). Prefer it over mocking `fs`. Restore perms
+  (`chmod 0o755`) in `afterEach` BEFORE `rmSync`'s recursive cleanup, or cleanup can't traverse the
+  locked dir.
+- [CARD-021] A "call X guards scenario Y" regression test is MASKED when its fixture also triggers a
+  sibling code path that calls the same guard: the cache-poisoning test with a `config.md` in its
+  fixture had `readConfig`'s own `clearMatterCache()` cover for the per-card loop's call, so removing
+  either alone still passed. To isolate a guard, the fixture must exclude everything else that happens
+  to invoke it (here: omit `config.md`), and you must verify by deleting ONLY the guard-under-test and
+  seeing the test go red.
