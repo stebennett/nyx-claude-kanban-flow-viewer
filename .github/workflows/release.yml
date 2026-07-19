@@ -28,3 +28,9 @@ jobs:
             echo "Tag $GITHUB_REF_NAME != v${VERSION}" >&2
             exit 1
           fi
+      - run: npm ci
+      - run: npm run build
+      - name: Publish to npm with provenance
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
