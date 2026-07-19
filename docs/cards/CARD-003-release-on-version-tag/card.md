@@ -11,7 +11,7 @@ depends_on: [CARD-001, CARD-002]
 branch: task/003-release-on-version-tag
 worktree: .worktrees/CARD-003-release-on-version-tag
 design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/28
-pr_urls: []
+pr_urls: [https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/39]
 split_slices: 0
 adrs: [ADR-0007]
 reworks:
