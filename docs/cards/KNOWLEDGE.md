@@ -108,6 +108,12 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   `test/ci-workflow.test.ts`) for every sequence where reordering silently changes behavior — and the
   chain must be EXTENDED to include newly-added terminal steps (e.g. a `gh release create` step after
   `npm publish`), not just the steps present when the order test was first written.
+- [CARD-021] When a module + its own test suite alone would still exceed `size_limit` by a small
+  margin, check whether the PR also adds pure, dependency-free interface types (`card-model.ts`) with
+  zero consumers in the same change — those form a legitimate lead slice (types-only, unused-export,
+  builds/lints/tests green standalone) ordered BEFORE the impl+tests slice, without splitting impl from
+  its tests or shipping a subject-less test file. (CARD-021: 17-line types slice + 490-line impl+tests
+  slice, both green.)
 
 ## Gotchas
 
