@@ -1,11 +1,11 @@
 ---
 verdict: pass
-review_lenses_failed: [tests]
+review_lenses_failed: []
 ---
 
 # CARD-003 — Review panel
 
-_Panel INCOMPLETE: the [tests] lens raised blocking findings across two rounds (verdict was fail); the implementer reworked (#1 and #2) and [tests] re-runs after re-test. The 7 sections below passed (advisories only)._
+_Full 8-lens panel PASS. The [tests] lens required 2 rework rounds (verdict was fail on rounds 1-2; both mutation-verified fixed on the round-3 re-run). All lenses clean, advisories only._
 
 ## [acceptance]
 
@@ -192,4 +192,22 @@ against the diff; package.json repository.url correctness against the actual rem
 
 Notable good: the new contract test mirrors the existing ci-workflow.test.ts/packaging.test.ts
 pattern closely enough to read as one system, not a bolted-on one-off.
+
+## [tests]
+
+### Blocking
+None. Re-verified by mutation (uncommitted edits to `.github/workflows/release.yml`, reverted after each run, tree clean):
+- Wrong/hardcoded release tag (`gh release create "v0.0.0-wrong" …`) → `creates a GitHub Release with generated notes` now fails on `referencesPushedTag`. Prior blocking finding resolved.
+- Guard operator flipped (`==` for `!=`) → `guards tag against package.json version` fails on the literal `toContain`. Rework #1 fix holds.
+- Publish reordered before build → `orders the publish job steps…` fails (`expected 5 to be less than 4`). Rework #1 fix holds.
+
+### Advisory
+- `test/release-workflow.test.ts:140` (`orders the publish job steps…`) — the index chain stops at `publishIndex`; it doesn't include the Release step. Mutation-verified: swapping the Release step to run before publish still passes all 13 tests. design.md's data-flow orders `publish(provenance) → release`. Not blocking — AC-4's text doesn't require this ordering and the current file is correct — but worth pinning given this PR already treats step order as a tested invariant. Fix: extend the chain with a `releaseIndex` and `expect(publishIndex).toBeLessThan(releaseIndex)`.
+
+### Checked and clean
+- AC→test map: trigger glob (AC-1), version guard + operator direction (AC-2), build/provenance/node-registry/step-order (AC-3), Release+generated-notes+tag-target (AC-4), gate reuse/`needs`/least-privilege/no escape hatches (AC-5) — each has a discriminating assertion.
+- Expected values hand-reproducible from design.md's Interfaces block, not derived by running the workflow.
+- SHA-pin regex, npm install/npm i ban, and continue-on-error/skipping-if false-green guards all present and specific enough to fail on the documented mutations.
+
+**One thing done well:** the test file's inline comments explain WHY each stronger assertion exists and what a presence-only check would have missed.
 
