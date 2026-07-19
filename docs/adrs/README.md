@@ -9,3 +9,4 @@
 | [ADR-0005](0005-card-model-shape-and-explicit-frontmatter-mapping.md) | Card model shape and the explicit snake_case→camelCase frontmatter mapping | Accepted | CARD-019 | 2026-07-18 |
 | [ADR-0006](0006-ci-gate-order-build-before-test.md) | CI gate order runs build before test (build gate feeds the test gate) | Accepted | CARD-002 | 2026-07-18 |
 | [ADR-0007](0007-release-workflow-reuse-gates-sha-pinned-provenance-publish.md) | Release on a vX.Y.Z tag: reuse CI gates, SHA-pinned actions, provenance publish | Accepted | CARD-003 | 2026-07-18 |
+| [ADR-0008](0008-board-walk-total-function-degrades-to-parseerrors.md) | The board walk is a total function: buildSnapshot degrades all file and parse failures into the snapshot, never throws | Accepted | CARD-021 | 2026-07-18 |
