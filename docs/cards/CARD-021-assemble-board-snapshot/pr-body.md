@@ -1,46 +1,40 @@
-## CARD-021 — design: Assemble a board snapshot from cards, config and parse errors   [task · domain]
+## CARD-021 — Assemble a board snapshot from cards, config and parse errors (slice 1 of 2: types)   [task · domain]
 
 ### Why
-The board API's foundational read: a crash-proof board walk. For each `<boardDir>/CARD-*/` dir, do one
-`readdir`, read `card.md`, and call the CARD-019/020 `parseCard(raw, { dirName, entries })`; read
-`config.md` for `wipLimit`; assemble the REQ-019 snapshot `{ generatedAt, projectName, config, cards,
-parseErrors }`. A malformed `card.md` (or `config.md`) degrades into `parseErrors` — one bad file never
-crashes the live board (REQ-033). Milestones are the sibling CARD-022 (additive seam noted).
+The board API's foundational read needs a snapshot contract before any consumer (`GET /api/board`, the
+SSE stream, the UI) can depend on it. This slice ships **only the JSON-contract type shapes** — the
+board walk that produces them is the sibling **slice 2** (`build-snapshot.ts` + its test suite), which
+merges next, onto a `main` that already carries these types.
 
-### Design summary
-- `buildSnapshot({ boardDir, projectName, now? })` in a new server-only `build-snapshot.ts` (first fs
-  access in the domain layer); `BoardSnapshot`/`BoardConfig`/`ParseError` types in the dependency-free
-  `card-model.ts` so the UI can `import type` the API contract without crossing the server/UI boundary.
-- **Crash-proof (ADR-0008):** each `parseCard` is wrapped in try/catch → `parseErrors` ({board-relative
-  path, error}); a malformed `config.md` also degrades; a valid card always parses regardless of
-  siblings; an absent `config.md` → default `wipLimit` 3. The design-check advised (and the implementer
-  will apply) putting `readFileSync(card.md)` inside the same try so an I/O read error also degrades —
-  matching the ADR's "never throws" wording exactly.
-- **Deterministic:** injectable `now?` clock (no flaky `new Date()` in assertions); `cards`/`parseErrors`
-  sorted by dir name for stable client diffing (REQ-009). Single `readdir` per card dir, `entries`
-  threaded to `parseCard` (CARD-020 contract). BOARD.md ignored (REQ-002).
-- **Tests:** a temp fixture-board suite (real dirs, no mocks) + a fast-check property proving every card
-  dir lands in exactly one of `cards`/`parseErrors` (the REQ-033 accounting invariant).
+### What changed
+- `src/server/card-model.ts` (+17): three new exported interfaces appended to the dependency-free
+  JSON-contract type module (ADR-0005's home for `CardModel`/`PhaseDocsPresent`):
+  - `BoardConfig` — `{ wipLimit: number }` (from `config.md`, REQ-003).
+  - `ParseError` — `{ path: string; error: string }` (board-relative path; the REQ-019/REQ-033 tray).
+  - `BoardSnapshot` — `{ generatedAt; projectName; config; cards; parseErrors }` (REQ-019). The
+    `milestones` field is deliberately absent — it is CARD-022's additive extension, not this card's.
+- Purely additive: no existing type is modified, and nothing consumes these interfaces yet.
 
-### Acceptance criteria (sharpened)
-- The snapshot carries `generatedAt` (ISO), `projectName` (repo basename), `config`, `cards`,
-  `parseErrors` — and NO `milestones` (REQ-019; CARD-022 adds that).
-- `config.wipLimit` from `config.md` `wip_limit`; absent/missing/non-numeric → default 3; `0` passes
-  through (REQ-003).
-- A malformed `card.md` → `parseErrors` (board-relative path + non-empty error) while every other card
-  still parses (REQ-033).
+### Acceptance criteria
+The card's three behavioral criteria (snapshot assembly, `config.wipLimit`, malformed-card handling) are
+delivered by **slice 2's** implementation and tests. This slice provides the type shapes they satisfy:
+- [x] `BoardSnapshot` carries `generatedAt`/`projectName`/`config`/`cards`/`parseErrors`, no `milestones` (REQ-019)
+- [x] `BoardConfig.wipLimit` shape for the `config.md` read (REQ-003)
+- [x] `ParseError` `{path, error}` shape for the parse-failure tray (REQ-019, REQ-033)
 
-### ADRs in this PR
-- ADR-0008 — The board walk is a total function: buildSnapshot degrades all file and parse failures
-  into the snapshot, never throws.
+### Testing
+Standalone-green as a type-only, consumer-free addition: lint, `tsc -b --noEmit`, `npm test` (54 tests),
+and build all pass with only this slice applied to `origin/main` (see `split.md`'s pasted slice-1 gate
+output; `split-acceptance.md` confirms the slice traces to its claim and stands alone).
 
-### Open questions / decisions deferred
-- None blocking. The design-check's one advisory (move `readFileSync` inside the per-card try for full
-  I/O-error totality) is a cheap implementation detail, recorded for the implementer.
-- **Note:** ADR-0008's index row lands in `docs/adrs/README.md` above where ADR-0007 (CARD-003's,
-  in-flight on a separate branch) will sit — a trivial index reconcile may occur when both design PRs merge.
+### Review
+Split of an oversized card (507 lines, 7 over the 500 cap) into 2 whole-file slices. Full 8-lens review
+panel on the whole card: **pass** (the totality bug and three test-strength gaps found and reworked).
+Split-check: **pass** (all 6 SPL-*). Per-slice acceptance trace: **pass**. ADR-0008 (the board walk is a
+total function) governs the behavior that lands in slice 2.
 
-Full design: `docs/cards/CARD-021-assemble-board-snapshot/design.md` (in this diff). Merging this PR
-approves the design and unblocks implementation.
+### Knowledge
+KNOWLEDGE [CARD-021]: gray-matter cache-poisoning guard; readdir-sort determinism; the types-lead-slice
+split convention; the SPL-GREEN pasted-output requirement.
 
-🤖 Design delivered via /kanban
+🤖 Card delivered via /kanban (slice 1 of 2)
