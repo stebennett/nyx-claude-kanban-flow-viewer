@@ -33,7 +33,7 @@ _last rendered: 2026-07-19_
 - CARD-021 — Assemble a board snapshot from cards, config and parse errors · review · task/021-assemble-board-snapshot [M2] · panel pass · split: 507 > 500 → pr-splitter
 
 ## Deliver
-- CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · deliver · task/003-release-on-version-tag [M1] · opening implementation PR
+- CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · deliver · task/003-release-on-version-tag [M1] · PR #39 open · checking deliver
 
 ## Blocked
 
