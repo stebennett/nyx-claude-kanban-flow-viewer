@@ -117,4 +117,39 @@ describe('release contract', () => {
     expect(setupNode?.with?.['registry-url']).toBe('https://registry.npmjs.org');
     expect(String(setupNode?.with?.['node-version'])).toBe('20');
   });
+
+  it('installs with npm ci, builds, then publishes with provenance', () => {
+    const { workflow } = loadWorkflow();
+    const steps = workflow.jobs?.['publish']?.steps ?? [];
+    const runs = steps.map((step) => step.run).filter((run): run is string => Boolean(run));
+
+    expect(runs).toContain('npm ci');
+    expect(runs).toContain('npm run build');
+
+    const publishStep = steps.find((step) => step.run && /npm publish/.test(step.run));
+    expect(publishStep?.run).toContain('--provenance');
+    expect(publishStep?.env?.['NODE_AUTH_TOKEN']).toBe('${{ secrets.NPM_TOKEN }}');
+  });
+
+  it('grants least-privilege publish permissions', () => {
+    const { workflow } = loadWorkflow();
+
+    expect(workflow.permissions?.['contents']).toBe('read');
+    expect(workflow.jobs?.['publish']?.permissions).toStrictEqual({
+      contents: 'write',
+      'id-token': 'write',
+    });
+  });
+
+  it('never installs with npm install', () => {
+    const { workflow } = loadWorkflow();
+    const steps = workflow.jobs?.['publish']?.steps ?? [];
+
+    for (const step of steps) {
+      if (!step.run) continue;
+      const words = step.run.trim().split(/\s+/);
+      expect(words).not.toEqual(['npm', 'install']);
+      expect(words).not.toEqual(['npm', 'i']);
+    }
+  });
 });
