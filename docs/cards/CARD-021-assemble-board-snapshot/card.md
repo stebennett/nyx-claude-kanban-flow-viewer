@@ -11,7 +11,7 @@ depends_on: [CARD-019, CARD-020]
 branch: task/021-assemble-board-snapshot
 worktree: .worktrees/CARD-021-assemble-board-snapshot
 design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/29
-pr_urls: []
+pr_urls: [https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/45]
 split_slices: 2
 adrs: [ADR-0008]
 reworks:
