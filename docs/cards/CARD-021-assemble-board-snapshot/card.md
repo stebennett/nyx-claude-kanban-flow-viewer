@@ -18,7 +18,7 @@ reworks:
   slice: 0
   design: 0
   implement: 1
-  split: 0
+  split: 1
   deliver: 0
 review_lenses_failed: []
 estimated_lines: 340
