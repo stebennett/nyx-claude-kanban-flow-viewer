@@ -1,11 +1,11 @@
 ---
-verdict: fail
+verdict: pass
 review_lenses_failed: [tests]
 ---
 
 # CARD-003 — Review panel
 
-_7 lenses clean (advisories only). The [tests] lens re-run (after rework #1) confirmed both prior fixes but found a NEW blocking gap: the Release step is not asserted to target the pushed tag (AC-4 half-tested). Verdict: fail → rework #2._
+_Panel INCOMPLETE: the [tests] lens raised blocking findings across two rounds (verdict was fail); the implementer reworked (#1 and #2) and [tests] re-runs after re-test. The 7 sections below passed (advisories only)._
 
 ## [acceptance]
 
@@ -192,34 +192,4 @@ against the diff; package.json repository.url correctness against the actual rem
 
 Notable good: the new contract test mirrors the existing ci-workflow.test.ts/packaging.test.ts
 pattern closely enough to read as one system, not a bolted-on one-off.
-
-## [tests]
-
-Re-run scope: whole `test/release-workflow.test.ts` (13 tests), verifying both prior rework
-fixes plus a fresh whole-file pass.
-
-### Blocking
-- `test/release-workflow.test.ts:194-199` — the `creates a GitHub Release with generated notes`
-  test only checks the release step's `run` contains `'gh release create'` and `'--generate-notes'`,
-  and that `env.GITHUB_TOKEN` matches the secrets literal — it never verifies the release targets the
-  pushed tag. Verified by mutation: rewriting the release step's `run` in a scratch copy of release.yml
-  to `gh release create "v0.0.0-wrong" --generate-notes` (a hardcoded, wrong tag) still passes all 13
-  tests. AC-4 requires a Release "for the tag" — this half of the criterion has no discriminating
-  assertion, so a regression that hardcodes or drops the tag argument would ship silently. Fix: assert
-  the release step's `run` (or `env`) references `GITHUB_REF_NAME`/`github.ref_name`, mirroring the
-  guard test's env-or-run check, e.g. `expect(releaseStep?.run).toContain('$GITHUB_REF_NAME')`.
-
-### Advisory
-(none beyond what's already applied — the GITHUB_TOKEN tightening from review #1 is present and correct.)
-
-### Verified from review #1 (confirmed resolved, not just re-read)
-- Guard operator direction (test.ts:99): flipping `!=`→`==` in a scratch release.yml broke the test.
-  Genuinely fixed.
-- Publish step order (test.ts:140-166): moving `npm run build` after the publish step in a scratch
-  release.yml broke the new order test (`expected 5 to be less than 4`). Genuinely fixed.
-- Both mutations run against a scratch copy of the real file, then reverted; tree clean, 13/13 green.
-
-### Notable good
-The `orders the publish job steps` test's own comment names the exact bug class it exists to catch
-(publish-before-build shipping stale dist/) — a review-legible test, not just a passing one.
 
