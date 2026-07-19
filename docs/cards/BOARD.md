@@ -26,10 +26,10 @@ _last rendered: 2026-07-19_
 ## Design
 
 ## Implement
-- CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · implement · task/003-release-on-version-tag [M1]
 - CARD-021 — Assemble a board snapshot from cards, config and parse errors · implement · task/021-assemble-board-snapshot [M2]
 
 ## Test
+- CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · test · task/003-release-on-version-tag [M1]
 
 ## Review
 

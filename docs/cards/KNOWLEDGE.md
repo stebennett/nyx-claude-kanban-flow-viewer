@@ -92,6 +92,10 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
 - [CARD-021] `buildSnapshot` sorts the `CARD-*` dir list before walking, so `cards`/`parseErrors` come out
   deterministically ordered (stable client diffing, REQ-009). A `CARD-*` dir missing `card.md` is skipped
   (not a parseError).
+- [CARD-003] `release.yml`'s intermediate TDD commits (design tasks 3–4) briefly add the version-guard
+  step before the checkout/setup-node steps that make it executable — deliberate increment ordering
+  from the design task list, not a bug; the workflow is only semantically complete (checkout precedes
+  the guard) after task 4's commit.
 
 ## Gotchas
 
@@ -254,3 +258,7 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   `v1.2`, `v1.2.3-rc1`, `v1.2.3.4`, or `latest` (the whole ref must match). This is REQ-037's "other tag
   shapes do not trigger" enforcement; assert the glob with `toStrictEqual`, since loosening it to `v*`
   would trigger on `v1`.
+- [CARD-003] KNOWLEDGE [CARD-002]'s rollup-optionalDependencies gotcha still bites any new worktree:
+  after `npm ci` on macOS/ARM, `grep -c 'node_modules/@rollup/rollup-' package-lock.json` must stay
+  ~25. A regenerated lockfile collapsing it to 1 (darwin-arm64 only) breaks `npm run build` (vite)
+  on CI's ubuntu runner ONLY — verify the count before running any test/build step in a fresh card.
