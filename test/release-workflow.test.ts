@@ -91,6 +91,12 @@ describe('release contract', () => {
         String(value).includes('github.ref_name'),
       );
     expect(referencesRefName).toBe(true);
+
+    // Pin the literal comparison direction: a presence-only check (does the run contain
+    // 'exit 1' and the version lookup?) would still pass with an inverted operator
+    // (`==` instead of `!=`), which would block every valid release AND publish on a
+    // mismatched tag — the exact irreversible failure AC-2 exists to prevent.
+    expect(guardStep?.run).toContain('"$GITHUB_REF_NAME" != "v${VERSION}"');
   });
 
   it('SHA-pins every third-party action with a version comment', () => {
@@ -131,6 +137,34 @@ describe('release contract', () => {
     expect(publishStep?.env?.['NODE_AUTH_TOKEN']).toBe('${{ secrets.NPM_TOKEN }}');
   });
 
+  it('orders the publish job steps: guard, then install, then build, then publish', () => {
+    // Mirrors test/ci-workflow.test.ts:44-55's indexOf ordering pattern. Presence-only
+    // assertions (above) would still pass if the steps were reordered — e.g. publish
+    // running before build would ship a stale/missing dist/ permanently, and the guard
+    // running after npm ci/build would waste the install/build before ever checking the
+    // tag — so pin the relative order of the full step array explicitly.
+    const { workflow } = loadWorkflow();
+    const steps = workflow.jobs?.['publish']?.steps ?? [];
+
+    const guardIndex = steps.findIndex(
+      (step) =>
+        step.run?.includes("require('./package.json').version") &&
+        step.run?.includes('exit 1'),
+    );
+    const npmCiIndex = steps.findIndex((step) => step.run?.trim() === 'npm ci');
+    const buildIndex = steps.findIndex((step) => step.run?.trim() === 'npm run build');
+    const publishIndex = steps.findIndex((step) => step.run && /npm publish/.test(step.run));
+
+    expect(guardIndex).toBeGreaterThanOrEqual(0);
+    expect(npmCiIndex).toBeGreaterThanOrEqual(0);
+    expect(buildIndex).toBeGreaterThanOrEqual(0);
+    expect(publishIndex).toBeGreaterThanOrEqual(0);
+
+    expect(guardIndex).toBeLessThan(npmCiIndex);
+    expect(npmCiIndex).toBeLessThan(buildIndex);
+    expect(buildIndex).toBeLessThan(publishIndex);
+  });
+
   it('grants least-privilege publish permissions', () => {
     const { workflow } = loadWorkflow();
 
@@ -162,7 +196,7 @@ describe('release contract', () => {
     );
 
     expect(releaseStep).toBeDefined();
-    expect(releaseStep?.env?.['GITHUB_TOKEN']).toBeDefined();
+    expect(releaseStep?.env?.['GITHUB_TOKEN']).toBe('${{ secrets.GITHUB_TOKEN }}');
   });
 
   it('has no gate-bypassing escape hatches', () => {
