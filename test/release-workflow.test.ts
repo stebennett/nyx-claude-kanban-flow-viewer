@@ -92,4 +92,29 @@ describe('release contract', () => {
       );
     expect(referencesRefName).toBe(true);
   });
+
+  it('SHA-pins every third-party action with a version comment', () => {
+    const { workflow, rawText } = loadWorkflow();
+    const lines = rawText.split('\n');
+
+    for (const job of Object.values(workflow.jobs ?? {})) {
+      for (const step of job.steps ?? []) {
+        if (!step.uses || step.uses.startsWith('./')) continue;
+
+        expect(step.uses).toMatch(/^[\w.-]+\/[\w.-]+@[0-9a-f]{40}$/);
+
+        const rawLine = lines.find((line) => line.includes(step.uses as string));
+        expect(rawLine).toMatch(/#\s*\S+/);
+      }
+    }
+  });
+
+  it('sets up node 20 with the npm registry for auth', () => {
+    const { workflow } = loadWorkflow();
+    const steps = workflow.jobs?.['publish']?.steps ?? [];
+    const setupNode = steps.find((step) => step.uses?.startsWith('actions/setup-node'));
+
+    expect(setupNode?.with?.['registry-url']).toBe('https://registry.npmjs.org');
+    expect(String(setupNode?.with?.['node-version'])).toBe('20');
+  });
 });
