@@ -4,16 +4,16 @@ type: task
 layer: infra
 reqs: [REQ-007, REQ-037]
 title: Publish npm package and GitHub Release on a vX.Y.Z tag
-status: backlog
-phase: backlog
+status: design
+phase: design
 right_sized: true
 depends_on: [CARD-001, CARD-002]
-branch: ""
-worktree: ""
-design_pr_url: ""
+branch: task/003-release-on-version-tag-design
+worktree: .worktrees/CARD-003-design
+design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/28
 pr_urls: []
 split_slices: 0
-adrs: []
+adrs: [ADR-0007]
 reworks:
   slice: 0
   design: 0
@@ -23,7 +23,7 @@ reworks:
 review_lenses_failed: []
 estimated_lines: 110
 actual_lines: ""
-started: ""
+started: 2026-07-18
 delivered: ""
 created: 2026-07-17
 ---

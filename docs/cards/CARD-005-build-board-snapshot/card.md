@@ -4,8 +4,8 @@ type: task
 layer: domain
 reqs: [REQ-003, REQ-004, REQ-019, REQ-033]
 title: Build a board snapshot from the board directory
-status: slice
-phase: slice
+status: split
+phase: split
 right_sized: ""
 depends_on: [CARD-019, CARD-020]
 branch: ""
@@ -39,6 +39,10 @@ reads. Full snapshots are deliberate: the client can never drift from disk.
 - [ ] A malformed card.md lands in parseErrors with path and error while every other card still parses (REQ-033)
 
 ## Notes
+Split into CARD-021 (Assemble a board snapshot from cards, config and parse errors) and CARD-022 (Add
+milestone progress to the board snapshot) — the fixture-heavy single-card estimate breached `size_limit`
+(slice.md/slice-check.md, terminal records). CARD-006 rewired onto CARD-022.
+
 AC-4 is the server half of REQ-033 — the malformed card reaches the snapshot as a
 parseError. CARD-017 renders it in the unparseable tray. Distinct behaviours either side
 of the API boundary, asserted differently (JSON here, DOM there).

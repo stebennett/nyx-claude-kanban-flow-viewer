@@ -63,6 +63,35 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   test duplicates the impl expression; review confirmed it still catches mutations (it's typed independently,
   not a call-through), but the tag-based style is strictly more robust against a shared authoring error in the
   design's prescribed formula. Prefer tag-based ground truth for the next multi-branch property test.
+- [CARD-003] Secret-bearing GitHub Actions jobs (release.yml's publish) SHA-pin every third-party
+  `uses:` to a full 40-hex commit SHA with a trailing `# vX.Y.Z` comment — never a `@vN` moving tag.
+  Resolve the SHA with `gh api /repos/<owner>/<action>/git/ref/tags/<tag> --jq .object.sha` (deref
+  annotated tags to the commit). The read-only PR-gate `ci.yml` may keep `@v4`; the contract test
+  enforces the SHA shape only on non-local (`uses:` not starting `./`) actions.
+- [CARD-003] `npm publish --provenance` (needs `id-token: write`) requires `repository.url` in
+  package.json or it errors "Provenance generation … requires repository.url". The field points at the
+  git remote `stebennett/nyx-claude-flow-viewer` (NOT the local dir name). Adding it does not break
+  `test/packaging.test.ts` (which never deep-equals the whole package.json — see [CARD-001]).
+- [CARD-003] The release version guard compares `github.ref_name` (the tag, e.g. `v1.2.3`) against
+  `v$(node -p "require('./package.json').version")` and `exit 1`s on mismatch, as the FIRST publish-job
+  step (after checkout, before build/publish) — so a mismatched or un-bumped version publishes nothing.
+  The trigger glob handles shape; the guard handles equality.
+- [CARD-021] `BoardSnapshot`/`BoardConfig`/`ParseError` (the `/api/board` JSON contract) live in the
+  dependency-free `card-model.ts` beside `CardModel` (ADR-0005), NOT in `build-snapshot.ts` (which pulls
+  `fs` + gray-matter) — so the UI can `import type` the API contract without crossing the src/server↔src/ui
+  boundary. CARD-022 adds `milestones` to `BoardSnapshot` additively; CARD-006/007/017 reuse these types.
+- [CARD-021] `parseError.path` is board-dir-relative with a **forward-slash literal** (`` `${dirName}/card.md` ``,
+  `config.md`), never absolute — deterministic across machines and never leaks a tmp/checkout path into the
+  `/api/board` JSON. Build it with a `/` string literal, not `path.join` (OS separator). Assert
+  `not.toContain(boardDir)` in tests.
+- [CARD-021] `DEFAULT_WIP_LIMIT = 3` (matches kanban-init's config default) applies when `config.md` is
+  absent OR `wip_limit` is missing/non-numeric; `wip_limit: 0` passes through (0 ≠ missing). config.md
+  ABSENT degrades silently to the default; config.md MALFORMED routes to `parseErrors('config.md')` + default
+  — the distinction is deliberate (REQ-014 permits a board of only CARD-* dirs). See [[adr-0008]] (the board
+  walk is total).
+- [CARD-021] `buildSnapshot` sorts the `CARD-*` dir list before walking, so `cards`/`parseErrors` come out
+  deterministically ordered (stable client diffing, REQ-009). A `CARD-*` dir missing `card.md` is skipped
+  (not a parseError).
 
 ## Gotchas
 
@@ -220,3 +249,8 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   CARD-011, consuming `phaseDocsPresent` for column inference, should avoid a local `const phase = …` that
   shadows/reads as the wrong one (review flagged the overload as advisory; a rename to `{ doc, check }` was
   deferred as it wasn't rework-worthy).
+- [CARD-003] GitHub Actions push-tag filter patterns support `[0-9]` ranges and `+` (one-or-more) and
+  treat `.` as literal, so `'v[0-9]+.[0-9]+.[0-9]+'` fires on `v1.2.3` / `v10.20.30` but NOT on `v1`,
+  `v1.2`, `v1.2.3-rc1`, `v1.2.3.4`, or `latest` (the whole ref must match). This is REQ-037's "other tag
+  shapes do not trigger" enforcement; assert the glob with `toStrictEqual`, since loosening it to `v*`
+  would trigger on `v1`.
