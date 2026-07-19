@@ -4,12 +4,12 @@ type: task
 layer: domain
 reqs: [REQ-003, REQ-019, REQ-033]
 title: Assemble a board snapshot from cards, config and parse errors
-status: design
-phase: design
+status: implement
+phase: implement
 right_sized: true
 depends_on: [CARD-019, CARD-020]
-branch: task/021-assemble-board-snapshot-design
-worktree: .worktrees/CARD-021-design
+branch: task/021-assemble-board-snapshot
+worktree: .worktrees/CARD-021-assemble-board-snapshot
 design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/29
 pr_urls: []
 split_slices: 0
