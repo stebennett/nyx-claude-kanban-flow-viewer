@@ -114,6 +114,12 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   builds/lints/tests green standalone) ordered BEFORE the impl+tests slice, without splitting impl from
   its tests or shipping a subject-less test file. (CARD-021: 17-line types slice + 490-line impl+tests
   slice, both green.)
+- [CARD-022] Milestone completion is defined once, in `src/server/milestones.ts`: a milestone's `done`
+  counts referenced cards whose `status === 'done'` (the sole terminal status in the spec's status enum —
+  `split`/`superseded` do NOT count); `total` is the number of card ids listed on the milestone's
+  `**Cards:**` line (not the number that resolved to a parsed card), so a milestone id with no parsed card
+  contributes to `total` but never to `done` and never throws (mirrors ADR-0008). CARD-006 (UI milestone
+  strip) renders these two numbers verbatim and needs no knowledge of the rule.
 
 ## Gotchas
 
@@ -313,3 +319,9 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   The deliver-checker should reconcile against the PR's actual CI job log before flagging DLV-BODY-TRUE —
   a body that accurately cites its source doc's real pasted evidence is not a false claim, even if a
   later unrelated merge makes the absolute number stale.
+- [CARD-022] Milestone parsing does NOT reuse `parse-card.ts`'s `extractSection` — milestone headings are
+  dynamic (`## M1 — …`, em-dash + digits) and `extractSection` interpolates its heading arg UNESCAPED into
+  a RegExp (the [CARD-019→CARD-020] latent trap). `milestones.ts` scans lines with fixed anchored patterns
+  (`/^##\s+M\d+/` for a heading, `/^\s*\*\*Cards:\*\*/` for the card line, `/CARD-\d+/g` to extract ids) so
+  no user/spec text is ever compiled into a regex. It also imports NO gray-matter and NO fs — pure over its
+  string+cards inputs — keeping it the same dependency-free character as `card-model.ts`.
