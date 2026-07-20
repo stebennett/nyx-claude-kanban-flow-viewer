@@ -6,7 +6,6 @@ _Rendered by `/kanban`. Do not hand-edit below the header._
 _last rendered: 2026-07-20_
 
 ## Backlog
-- CARD-022 — Add milestone progress to the board snapshot · backlog [M2]
 - CARD-006 — Serve the parsed board over HTTP · backlog [M2]
 - CARD-007 — Push live snapshots over SSE · backlog [M2]
 - CARD-008 — Serve a card's phase docs · backlog [M2]
@@ -24,6 +23,7 @@ _last rendered: 2026-07-20_
 ## Slice
 
 ## Design
+- CARD-022 — Add milestone progress to the board snapshot · design · task/022-milestone-progress-design [M2] · designing
 
 ## Implement
 
@@ -32,7 +32,6 @@ _last rendered: 2026-07-20_
 ## Review
 
 ## Deliver
-- CARD-021 — Assemble a board snapshot from cards, config and parse errors · deliver · task/021-assemble-board-snapshot [M2] · split: 2 slices · PR 1/2 #45 merged — PR 2/2 #49 open · checking deliver
 
 ## Blocked
 
@@ -42,6 +41,7 @@ _last rendered: 2026-07-20_
 - CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · delivered 2026-07-20 · PRs #28 (design) + #39 · 269 lines · 2 implement reworks [M1]
 - CARD-019 — Parse card.md frontmatter and body into the card model · delivered 2026-07-18 · PRs #7 (design) + #9 · 601 lines · 1 rework [M2]
 - CARD-020 — Record phase-doc presence in the card model · delivered 2026-07-18 · PRs #20 (design) + #24 · 185 lines · 0 reworks [M2]
+- CARD-021 — Assemble a board snapshot from cards, config and parse errors · delivered 2026-07-20 · PRs #29 (design) + #45 + #49 (2 slices) · 507 lines · 1 implement + 1 split rework [M2]
 
 ## Split
 - CARD-004 — Parse a card.md into the card model → split into CARD-019, CARD-020 [M2]
@@ -51,6 +51,6 @@ _last rendered: 2026-07-20_
 
 ## Milestones
 - M1 — Toolchain and delivery pipeline · 3/3 · complete
-- M2 — Headless board API · 2/8 · in progress
+- M2 — Headless board API · 3/8 · in progress
 - M3 — Live board UI · 0/6 · not started
 - M4 — Detail, milestones and activity · 0/3 · not started

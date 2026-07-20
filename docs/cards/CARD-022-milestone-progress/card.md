@@ -4,12 +4,12 @@ type: task
 layer: domain
 reqs: [REQ-004, REQ-019]
 title: Add milestone progress to the board snapshot
-status: backlog
-phase: backlog
+status: design
+phase: design
 right_sized: true
 depends_on: [CARD-021, CARD-019, CARD-020]
-branch: ""
-worktree: ""
+branch: task/022-milestone-progress-design
+worktree: .worktrees/CARD-022-milestone-progress
 design_pr_url: ""
 pr_urls: []
 split_slices: 0
@@ -23,7 +23,7 @@ reworks:
 review_lenses_failed: []
 estimated_lines: 280
 actual_lines: ""
-started: ""
+started: 2026-07-20
 delivered: ""
 created: 2026-07-18
 ---
