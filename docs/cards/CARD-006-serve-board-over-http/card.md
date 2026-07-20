@@ -4,16 +4,16 @@ type: feature
 layer: api
 reqs: [REQ-001, REQ-006, REQ-010, REQ-016]
 title: Serve the parsed board over HTTP
-status: backlog
-phase: backlog
+status: design
+phase: design
 right_sized: ""
 depends_on: [CARD-022]
-branch: ""
-worktree: ""
-design_pr_url: ""
+branch: feature/006-serve-board-over-http-design
+worktree: .worktrees/CARD-006-serve-board-over-http
+design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/56
 pr_urls: []
 split_slices: 0
-adrs: []
+adrs: [ADR-0010, ADR-0011]
 reworks:
   slice: 0
   design: 0
@@ -23,7 +23,7 @@ reworks:
 review_lenses_failed: []
 estimated_lines: 313
 actual_lines: ""
-started: ""
+started: 2026-07-20
 delivered: ""
 created: 2026-07-17
 ---
@@ -57,3 +57,7 @@ where it is actually claimed.
 
 `reqs` carries REQ-006 by residence (the "CLI entry" and "small Node HTTP server" it
 enumerates); no AC cites it, which is correct for a structural REQ.
+
+self-fix 2026-07-20 · DLV-BODY-TRUE · design — corrected the PR-body size attribution
+(was "~370 changed lines, design-check re-derived" — design-check has no size criterion;
+now cites slice-check SLC-SIZE ~320 / estimated_lines 313). Fixed on the branch + live PR #56.
