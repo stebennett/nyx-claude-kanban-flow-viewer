@@ -26,9 +26,9 @@ _last rendered: 2026-07-20_
 ## Implement
 
 ## Test
-- CARD-006 — Serve the parsed board over HTTP · test · feature/006-serve-board-over-http [M2] · rework green (128 tests) — re-testing (then re-review functionality+tests)
 
 ## Review
+- CARD-006 — Serve the parsed board over HTTP · review · feature/006-serve-board-over-http [M2] · re-review (functionality+tests) after rework 1/2
 
 ## Deliver
 
