@@ -134,7 +134,34 @@ describe('release contract', () => {
 
     const publishStep = steps.find((step) => step.run && /npm publish/.test(step.run));
     expect(publishStep?.run).toContain('--provenance');
-    expect(publishStep?.env?.['NODE_AUTH_TOKEN']).toBe('${{ secrets.NPM_TOKEN }}');
+  });
+
+  it('publishes via npm Trusted Publishers (OIDC), not an NPM_TOKEN secret', () => {
+    // https://docs.npmjs.com/trusted-publishers — trusted publishing authenticates the
+    // publish step via the job's OIDC identity token, so no NODE_AUTH_TOKEN/NPM_TOKEN
+    // secret should be wired in anywhere in the workflow.
+    const { workflow, rawText } = loadWorkflow();
+    const steps = workflow.jobs?.['publish']?.steps ?? [];
+    const publishStep = steps.find((step) => step.run && /npm publish/.test(step.run));
+
+    expect(publishStep?.env?.['NODE_AUTH_TOKEN']).toBeUndefined();
+    expect(rawText).not.toContain('secrets.NPM_TOKEN');
+  });
+
+  it('upgrades npm to a version that supports trusted publishing before publishing', () => {
+    // Trusted publishing requires npm CLI >= 11.5.1; Node 20's bundled npm (10.x) predates
+    // that, so the workflow must upgrade the npm CLI itself (not a dependency install)
+    // before the publish step runs.
+    const { workflow } = loadWorkflow();
+    const steps = workflow.jobs?.['publish']?.steps ?? [];
+
+    const npmUpgradeIndex = steps.findIndex((step) =>
+      /npm install -g npm@/.test(step.run ?? ''),
+    );
+    const publishIndex = steps.findIndex((step) => step.run && /npm publish/.test(step.run));
+
+    expect(npmUpgradeIndex).toBeGreaterThanOrEqual(0);
+    expect(publishIndex).toBeGreaterThan(npmUpgradeIndex);
   });
 
   it('orders the publish job steps: guard, then install, then build, then publish', () => {

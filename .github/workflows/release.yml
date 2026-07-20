@@ -30,10 +30,10 @@ jobs:
           fi
       - run: npm ci
       - run: npm run build
+      - name: Upgrade npm for trusted publishing (OIDC)
+        run: npm install -g npm@latest
       - name: Publish to npm with provenance
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Create GitHub Release
         run: gh release create "$GITHUB_REF_NAME" --generate-notes
         env:
