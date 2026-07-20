@@ -325,3 +325,19 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   (`/^##\s+M\d+/` for a heading, `/^\s*\*\*Cards:\*\*/` for the card line, `/CARD-\d+/g` to extract ids) so
   no user/spec text is ever compiled into a regex. It also imports NO gray-matter and NO fs — pure over its
   string+cards inputs — keeping it the same dependency-free character as `card-model.ts`.
+- [CARD-022] A fast-check arbitrary that feeds a parser must satisfy that parser's own accept pattern, or the
+  property silently exercises nothing: a milestone-name arbitrary must match `parseMilestones`' heading regex
+  `/^##\s+(M\d+.*)$/` (e.g. `"M1 — fixture"`, not `"M — fixture"` with no digit after `M`) — otherwise
+  `parseMilestones` returns `[]` and `result[0]` is `undefined`, and the property passes vacuously. Caught here
+  as "expected undefined to be defined", shrunk to `cardIds: []`. Generate inputs the code under test accepts.
+- [CARD-022] A line-scanning parser over an **externally-authored** file (one this tool reads from an
+  arbitrary target repo, not one it writes) must split on `/\r\n|\n/`, never a bare `'\n'`: a
+  CRLF-checked-out file (git-for-Windows `core.autocrlf=true`) leaves a trailing `\r` on every line, and
+  no anchored regex ending `$` matches it (`.` excludes `\r`; JS `$` without `m` won't match before it),
+  so the parser silently returns `[]` with no error. `milestones.ts` shipped this bug (all fixtures were
+  LF); the whole-branch review's functionality + tests lenses caught it, fixed in `ed03641`.
+  `parse-card.ts`'s `extractSection` is only *accidentally* CRLF-safe (its trailing `\s*$` absorbs the
+  `\r`) — don't rely on that accident; split on `/\r\n|\n/` explicitly.
+- [CARD-022] A CRLF-vs-LF regression test must pin a **literal** hardcoded expected value, not only a
+  differential compare (`parseX(crlf)` toEqual `parseX(lf)`): the differential alone passes vacuously if a
+  bug degrades both sides to the same wrong value (e.g. `[]` on both). Assert the literal parsed array too.

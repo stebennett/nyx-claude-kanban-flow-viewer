@@ -23,7 +23,6 @@ _last rendered: 2026-07-20_
 ## Slice
 
 ## Design
-- CARD-022 — Add milestone progress to the board snapshot · design · task/022-milestone-progress-design [M2] · design PR #52 open — deliver-check ✓, awaiting human merge
 
 ## Implement
 
@@ -32,6 +31,7 @@ _last rendered: 2026-07-20_
 ## Review
 
 ## Deliver
+- CARD-022 — Add milestone progress to the board snapshot · deliver · task/022-milestone-progress [M2] · PR #54 open (325 lines, 1 rework: CRLF) — deliver-check ✓, awaiting human merge
 
 ## Blocked
 

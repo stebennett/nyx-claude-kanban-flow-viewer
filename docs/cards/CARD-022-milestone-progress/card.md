@@ -4,25 +4,25 @@ type: task
 layer: domain
 reqs: [REQ-004, REQ-019]
 title: Add milestone progress to the board snapshot
-status: design
-phase: design
+status: deliver
+phase: deliver
 right_sized: true
 depends_on: [CARD-021, CARD-019, CARD-020]
-branch: task/022-milestone-progress-design
-worktree: .worktrees/CARD-022-milestone-progress
+branch: task/022-milestone-progress
+worktree: .worktrees/CARD-022-milestone-progress-impl
 design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/52
-pr_urls: []
+pr_urls: [https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/54]
 split_slices: 0
 adrs: []
 reworks:
   slice: 0
   design: 0
-  implement: 0
+  implement: 1
   split: 0
   deliver: 0
 review_lenses_failed: []
 estimated_lines: 280
-actual_lines: ""
+actual_lines: 325
 started: 2026-07-20
 delivered: ""
 created: 2026-07-18
