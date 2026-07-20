@@ -70,5 +70,6 @@ export interface BoardSnapshot {
   projectName: string;
   config: BoardConfig;
   cards: CardModel[];
+  milestones: MilestoneProgress[];
   parseErrors: ParseError[];
 }
