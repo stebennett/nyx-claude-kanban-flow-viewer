@@ -25,9 +25,11 @@ _last rendered: 2026-07-20_
 ## Design
 
 ## Implement
-- CARD-022 — Add milestone progress to the board snapshot · implement · task/022-milestone-progress [M2] · design PR #52 merged — implementing (TDD)
 
 ## Test
+- CARD-022 — Add milestone progress to the board snapshot · test · task/022-milestone-progress [M2] · implement complete (104 tests) — checking (tester)
+
+## Review
 
 ## Review
 
