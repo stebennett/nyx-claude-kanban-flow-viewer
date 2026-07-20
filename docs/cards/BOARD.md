@@ -20,9 +20,9 @@ _last rendered: 2026-07-20_
 - CARD-018 — CLI flags and startup validation · backlog [M2]
 
 ## Slice
-- CARD-006 — Serve the parsed board over HTTP · slice [M2] · slicing (right-size check)
 
 ## Design
+- CARD-006 — Serve the parsed board over HTTP · design · feature/006-serve-board-over-http-design [M2] · right-sized (~320 lines) — designing
 
 ## Implement
 
