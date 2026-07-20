@@ -330,3 +330,11 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   `/^##\s+(M\d+.*)$/` (e.g. `"M1 — fixture"`, not `"M — fixture"` with no digit after `M`) — otherwise
   `parseMilestones` returns `[]` and `result[0]` is `undefined`, and the property passes vacuously. Caught here
   as "expected undefined to be defined", shrunk to `cardIds: []`. Generate inputs the code under test accepts.
+- [CARD-022] A line-scanning parser over an **externally-authored** file (one this tool reads from an
+  arbitrary target repo, not one it writes) must split on `/\r\n|\n/`, never a bare `'\n'`: a
+  CRLF-checked-out file (git-for-Windows `core.autocrlf=true`) leaves a trailing `\r` on every line, and
+  no anchored regex ending `$` matches it (`.` excludes `\r`; JS `$` without `m` won't match before it),
+  so the parser silently returns `[]` with no error. `milestones.ts` shipped this bug (all fixtures were
+  LF); the whole-branch review's functionality + tests lenses caught it, fixed in `ed03641`.
+  `parse-card.ts`'s `extractSection` is only *accidentally* CRLF-safe (its trailing `\s*$` absorbs the
+  `\r`) — don't rely on that accident; split on `/\r\n|\n/` explicitly.
