@@ -341,3 +341,10 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
 - [CARD-022] A CRLF-vs-LF regression test must pin a **literal** hardcoded expected value, not only a
   differential compare (`parseX(crlf)` toEqual `parseX(lf)`): the differential alone passes vacuously if a
   bug degrades both sides to the same wrong value (e.g. `[]` on both). Assert the literal parsed array too.
+- [CARD-006] A no-network test guard that spies `net.Socket.prototype.connect` must handle its
+  **polymorphic first arg**: a port number (host in arg 2), an IPC path string (a unix socket — allow),
+  or an options object `{host, port, path}`. Read the host from `arg.host ?? arg.path` for the object
+  form and arg 2 for the number form; treat `undefined`/`''`/`localhost`/`127.0.0.1`/`::1`/
+  `::ffff:127.0.0.1` as loopback. undici (global `fetch`) connects via net sockets, so the spy catches
+  `fetch` too — asserting on the connection TARGET (loopback vs not) catches a GitHub call by remote
+  address without real DNS/network. Design decisions recorded in ADR-0010/ADR-0011.

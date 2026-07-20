@@ -13,7 +13,7 @@ worktree: .worktrees/CARD-006-serve-board-over-http
 design_pr_url: ""
 pr_urls: []
 split_slices: 0
-adrs: []
+adrs: [ADR-0010, ADR-0011]
 reworks:
   slice: 0
   design: 0
