@@ -28,7 +28,7 @@ _last rendered: 2026-07-20_
 ## Test
 
 ## Review
-- CARD-006 — Serve the parsed board over HTTP · review · feature/006-serve-board-over-http [M2] · re-review (functionality+tests) after rework 1/2
+- CARD-006 — Serve the parsed board over HTTP · review · feature/006-serve-board-over-http [M2] · panel PASS (1 rework) · 679 lines > 500 — splitting
 
 ## Deliver
 

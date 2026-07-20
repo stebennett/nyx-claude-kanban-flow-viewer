@@ -368,3 +368,8 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
 - [CARD-006] `index.ts`'s server binds `.listen(PORT, '127.0.0.1', cb)` (loopback), NOT `.listen(PORT, cb)`
   — the host-less form binds all interfaces (0.0.0.0/::), exposing the read-only board to the LAN while the
   log claims `http://localhost`. Tests bind `127.0.0.1`; production must match. A `--host` flag is CARD-018's.
+- [CARD-006] When mutation-verifying a **fail-closed** branch's test coverage, mutate the branch's
+  **body/return value** (make it return the permissive outcome), not just its **condition** (make it
+  always fall through): the fail-closed catch-all can mask a condition-only mutant on a "blocks X" test
+  that doesn't assert message content, so a condition mutant looks like it reddens fewer tests than the
+  body mutant the implementer's claim actually describes. Match the mutation to the claim.
