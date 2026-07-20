@@ -4,12 +4,12 @@ type: feature
 layer: api
 reqs: [REQ-001, REQ-006, REQ-010, REQ-016]
 title: Serve the parsed board over HTTP
-status: design
-phase: design
-right_sized: ""
+status: implement
+phase: implement
+right_sized: true
 depends_on: [CARD-022]
-branch: feature/006-serve-board-over-http-design
-worktree: .worktrees/CARD-006-serve-board-over-http
+branch: feature/006-serve-board-over-http
+worktree: .worktrees/CARD-006-serve-board-over-http-impl
 design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/56
 pr_urls: []
 split_slices: 0

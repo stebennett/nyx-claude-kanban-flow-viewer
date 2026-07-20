@@ -22,9 +22,9 @@ _last rendered: 2026-07-20_
 ## Slice
 
 ## Design
-- CARD-006 — Serve the parsed board over HTTP · design · feature/006-serve-board-over-http-design [M2] · design PR #56 open (ADR-0010/0011) — deliver-check ✓ (1 self-fix), awaiting human merge
 
 ## Implement
+- CARD-006 — Serve the parsed board over HTTP · implement · feature/006-serve-board-over-http [M2] · design PR #56 merged (ADR-0010/0011) — implementing (TDD, 6 tasks)
 
 ## Test
 
