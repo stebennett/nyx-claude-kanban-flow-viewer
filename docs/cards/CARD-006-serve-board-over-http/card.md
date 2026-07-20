@@ -4,8 +4,8 @@ type: feature
 layer: api
 reqs: [REQ-001, REQ-006, REQ-010, REQ-016]
 title: Serve the parsed board over HTTP
-status: test
-phase: test
+status: implement
+phase: implement
 right_sized: true
 depends_on: [CARD-022]
 branch: feature/006-serve-board-over-http
@@ -17,10 +17,10 @@ adrs: [ADR-0010, ADR-0011]
 reworks:
   slice: 0
   design: 0
-  implement: 0
+  implement: 1
   split: 0
   deliver: 0
-review_lenses_failed: []
+review_lenses_failed: [functionality, tests]
 estimated_lines: 313
 actual_lines: ""
 started: 2026-07-20
