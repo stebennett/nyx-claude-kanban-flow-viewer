@@ -14,6 +14,7 @@
     "src/server/paths.ts",
     "src/server/card-model.ts",
     "src/server/parse-card.ts",
+    "src/server/build-snapshot.ts",
     "vite.config.ts"
   ]
 }
