@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import matter from 'gray-matter';
 import { parseCard } from './parse-card.js';
+import { deriveMilestones } from './milestones.js';
 import type { BoardConfig, BoardSnapshot, ParseError } from './card-model.js';
 
 function errorMessage(err: unknown): string {
@@ -30,6 +31,20 @@ export interface BuildSnapshotOptions {
 
 function asWipLimit(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : DEFAULT_WIP_LIMIT;
+}
+
+/**
+ * Reads MILESTONES.md's raw text for `deriveMilestones` (a pure line-scanner
+ * that never throws). Any read failure (absent file, unreadable dir, …)
+ * degrades silently to '', mirroring `readConfig`'s absent-config branch —
+ * no parseError, since an empty/absent MILESTONES.md just yields `[]`.
+ */
+function readMilestonesRaw(boardDir: string): string {
+  try {
+    return readFileSync(path.join(boardDir, 'MILESTONES.md'), 'utf-8');
+  } catch {
+    return '';
+  }
 }
 
 function readConfig(boardDir: string, parseErrors: ParseError[]): BoardConfig {
@@ -73,6 +88,8 @@ export function buildSnapshot(options: BuildSnapshotOptions): BoardSnapshot {
     }
   }
 
+  const milestones = deriveMilestones(readMilestonesRaw(options.boardDir), cards);
+
   const now = options.now ?? (() => new Date());
 
   return {
@@ -80,6 +97,7 @@ export function buildSnapshot(options: BuildSnapshotOptions): BoardSnapshot {
     projectName: options.projectName,
     config,
     cards,
+    milestones,
     parseErrors,
   };
 }

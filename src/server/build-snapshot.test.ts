@@ -73,7 +73,7 @@ describe('buildSnapshot', () => {
     expect(snap).toHaveProperty('config');
     expect(snap).toHaveProperty('cards');
     expect(snap).toHaveProperty('parseErrors');
-    expect(snap).not.toHaveProperty('milestones');
+    expect(snap).toHaveProperty('milestones');
     expect(snap.projectName).toBe('my-project');
     expect(snap.cards.length).toBe(2);
     expect(snap.parseErrors).toEqual([]);
@@ -353,6 +353,49 @@ title: 'also unterminated
 
     expect(snap.cards).toEqual([]);
     expect(snap.parseErrors).toEqual([]);
+  });
+
+  it('derives milestones from MILESTONES.md and the parsed cards', () => {
+    const boardDir = writeFixtureBoard({
+      'config.md': '---\nwip_limit: 2\n---\n',
+      'MILESTONES.md': '## M1 — X\n**Cards:** CARD-001, CARD-002\n',
+      'CARD-001-first/card.md': '---\nid: CARD-001\nstatus: done\n---\n',
+      'CARD-002-second/card.md': '---\nid: CARD-002\nstatus: backlog\n---\n',
+    });
+
+    const snap = buildSnapshot({ boardDir, projectName: 'p' });
+
+    expect(snap.milestones).toEqual([
+      { name: 'M1 — X', cardIds: ['CARD-001', 'CARD-002'], done: 1, total: 2 },
+    ]);
+  });
+
+  it('returns an empty milestones array when MILESTONES.md is absent', () => {
+    const boardDir = writeFixtureBoard({
+      'config.md': '---\nwip_limit: 2\n---\n',
+      'CARD-001-first/card.md': VALID_CARD_1,
+    });
+
+    const snap = buildSnapshot({ boardDir, projectName: 'p' });
+
+    expect(snap.milestones).toEqual([]);
+  });
+
+  it('counts a milestone card id with no matching card dir in total without throwing', () => {
+    const boardDir = writeFixtureBoard({
+      'config.md': '---\nwip_limit: 2\n---\n',
+      'MILESTONES.md': '## M1 — X\n**Cards:** CARD-001, CARD-404\n',
+      'CARD-001-first/card.md': '---\nid: CARD-001\nstatus: done\n---\n',
+    });
+
+    let snap: BoardSnapshot | undefined;
+    expect(() => {
+      snap = buildSnapshot({ boardDir, projectName: 'p' });
+    }).not.toThrow();
+
+    expect(snap?.milestones).toEqual([
+      { name: 'M1 — X', cardIds: ['CARD-001', 'CARD-404'], done: 1, total: 2 },
+    ]);
   });
 
   it('property: every card dir lands in exactly one of cards/parseErrors (REQ-033)', () => {

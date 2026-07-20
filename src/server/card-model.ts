@@ -58,10 +58,18 @@ export interface ParseError {
   error: string;
 }
 
+export interface MilestoneProgress {
+  name: string;
+  cardIds: string[];
+  done: number;
+  total: number;
+}
+
 export interface BoardSnapshot {
   generatedAt: string;
   projectName: string;
   config: BoardConfig;
   cards: CardModel[];
+  milestones: MilestoneProgress[];
   parseErrors: ParseError[];
 }
