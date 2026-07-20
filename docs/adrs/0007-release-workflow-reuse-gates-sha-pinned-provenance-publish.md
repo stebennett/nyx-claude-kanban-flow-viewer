@@ -1,11 +1,11 @@
 ---
 id: ADR-0007
 title: "Release on a vX.Y.Z tag: reuse CI gates, SHA-pinned actions, provenance publish"
-status: Accepted
+status: Superseded
 date: 2026-07-18
 card: CARD-003
 supersedes: []
-superseded_by: ""
+superseded_by: ADR-0009
 ---
 
 # ADR-0007: Release on a vX.Y.Z tag: reuse CI gates, SHA-pinned actions, provenance publish
@@ -34,7 +34,7 @@ provenance prerequisite), pointing at the git remote `stebennett/nyx-claude-flow
 
 ## Status
 
-Accepted
+Superseded by ADR-0009
 
 ## Consequences
 
