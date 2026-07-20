@@ -12,14 +12,20 @@ Release. An npm publish is permanent, so the version/tag guard and the gate wall
   `publish` (`needs: gates`) triggers only on `push` tags matching `v[0-9]+.[0-9]+.[0-9]+`.
 - `publish` job: SHA-pinned `actions/checkout@…v4.2.2` and `actions/setup-node@…v4.1.0`; a version-guard
   first step that `exit 1`s if `github.ref_name != v<package.json version>`; `npm ci` → `npm run build`
-  → `npm publish --provenance --access public`; `gh release create "$GITHUB_REF_NAME" --generate-notes`.
-  Least-privilege permissions (top-level `contents: read`; publish `contents: write` + `id-token: write`).
+  → `npm install -g npm@latest` → `npm publish --provenance --access public`; `gh release create
+  "$GITHUB_REF_NAME" --generate-notes`. **Authentication is npm Trusted Publishers (OIDC)** — no
+  `NODE_AUTH_TOKEN`/`NPM_TOKEN`; the `npm@latest` upgrade reaches npm ≥ 11.5.1 (Node 20 ships 10.x),
+  which trusted publishing requires. Least-privilege permissions (top-level `contents: read`; publish
+  `contents: write` + `id-token: write`, the OIDC publish credential).
 - Added `package.json` `repository.url` (a hard `npm publish --provenance` prerequisite).
-- Added `test/release-workflow.test.ts` (13 js-yaml/JSON contract tests) asserting every AC plus the
-  false-green guards (SHA-pin shape; no `continue-on-error`/skipping `if:` on gate/publish steps).
+- Added `test/release-workflow.test.ts` (js-yaml/JSON contract tests) asserting every AC plus the
+  false-green guards (SHA-pin shape; no `continue-on-error`/skipping `if:` on gate/publish steps; no
+  `NODE_AUTH_TOKEN`/`secrets.NPM_TOKEN` anywhere).
+- Supersedes **ADR-0007** with **ADR-0009** (auth-mechanism reversal: OIDC trusted publishing).
 
-**Manual prerequisite (no card can create it):** an `NPM_TOKEN` repo secret. The workflow already
-declares `id-token: write` (provenance) and `contents: write` (Release).
+**Manual prerequisite (no card can create it):** a **Trusted Publisher** configured for this package on
+npmjs.com, pointing at this repo's `.github/workflows/release.yml` — no repo secret. The workflow
+declares `id-token: write` (the OIDC publish credential) and `contents: write` (Release).
 
 ### Acceptance criteria
 - [x] Pushing a `vX.Y.Z` tag triggers the release workflow; other tag shapes do not (REQ-037)
