@@ -22,7 +22,7 @@ _last rendered: 2026-07-20_
 ## Slice
 
 ## Design
-- CARD-006 — Serve the parsed board over HTTP · design · feature/006-serve-board-over-http-design [M2] · right-sized (~320 lines) — designing
+- CARD-006 — Serve the parsed board over HTTP · design · feature/006-serve-board-over-http-design [M2] · design PR #56 open (ADR-0010/0011) · checking deliver
 
 ## Implement
 

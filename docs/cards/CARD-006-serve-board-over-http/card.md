@@ -10,7 +10,7 @@ right_sized: ""
 depends_on: [CARD-022]
 branch: feature/006-serve-board-over-http-design
 worktree: .worktrees/CARD-006-serve-board-over-http
-design_pr_url: ""
+design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/56
 pr_urls: []
 split_slices: 0
 adrs: [ADR-0010, ADR-0011]
