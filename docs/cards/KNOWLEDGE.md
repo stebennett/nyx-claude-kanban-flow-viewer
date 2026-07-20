@@ -307,3 +307,9 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   (vitest summary banner, tsc/eslint/vite output) for the full-branch bootstrap AND each slice's scratch
   build — a narrative summary ("npm test 54/54", "lint clean") FAILS split-check even when the numbers
   are internally consistent. Match the fenced-real-output convention `test.md` already uses.
+- [CARD-021] A trailing slice's PR body citing an earlier slice's `split.md` "cumulative tests" count
+  (e.g. "75 tests") can go stale by the time that slice's PR opens, if an unrelated card merges new tests
+  into `main` in between (here CARD-003's `release-workflow.test.ts`, +15, made the real CI total 90).
+  The deliver-checker should reconcile against the PR's actual CI job log before flagging DLV-BODY-TRUE —
+  a body that accurately cites its source doc's real pasted evidence is not a false claim, even if a
+  later unrelated merge makes the absolute number stale.

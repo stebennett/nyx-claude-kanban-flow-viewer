@@ -32,14 +32,14 @@ _last rendered: 2026-07-20_
 ## Review
 
 ## Deliver
-- CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · deliver · task/003-release-on-version-tag [M1] · PR #39 open — review comment addressed (→ npm Trusted Publishers, ADR-0009 supersedes ADR-0007), CI re-running, awaiting human merge
-- CARD-021 — Assemble a board snapshot from cards, config and parse errors · deliver · task/021-assemble-board-snapshot [M2] · split: 2 slices · PR 1/2 #45 open — deliver-check ✓, awaiting human merge (then slice 2/2)
+- CARD-021 — Assemble a board snapshot from cards, config and parse errors · deliver · task/021-assemble-board-snapshot [M2] · split: 2 slices · PR 1/2 #45 merged — PR 2/2 #49 open · checking deliver
 
 ## Blocked
 
 ## Done
 - CARD-001 — Scaffold the TypeScript package and toolchain · delivered 2026-07-18 · PRs #1 (design) + #3 · 372 lines · 1 rework [M1]
 - CARD-002 — Run lint, typecheck, tests and build on every pull request · delivered 2026-07-18 · PRs #6 (design) + #25 · 191 lines · 1 deliver rework [M1]
+- CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · delivered 2026-07-20 · PRs #28 (design) + #39 · 269 lines · 2 implement reworks [M1]
 - CARD-019 — Parse card.md frontmatter and body into the card model · delivered 2026-07-18 · PRs #7 (design) + #9 · 601 lines · 1 rework [M2]
 - CARD-020 — Record phase-doc presence in the card model · delivered 2026-07-18 · PRs #20 (design) + #24 · 185 lines · 0 reworks [M2]
 
@@ -50,7 +50,7 @@ _last rendered: 2026-07-20_
 ## Superseded
 
 ## Milestones
-- M1 — Toolchain and delivery pipeline · 2/3 · in progress
+- M1 — Toolchain and delivery pipeline · 3/3 · complete
 - M2 — Headless board API · 2/8 · in progress
 - M3 — Live board UI · 0/6 · not started
 - M4 — Detail, milestones and activity · 0/3 · not started
