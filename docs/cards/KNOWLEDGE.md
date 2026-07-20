@@ -341,10 +341,18 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
 - [CARD-022] A CRLF-vs-LF regression test must pin a **literal** hardcoded expected value, not only a
   differential compare (`parseX(crlf)` toEqual `parseX(lf)`): the differential alone passes vacuously if a
   bug degrades both sides to the same wrong value (e.g. `[]` on both). Assert the literal parsed array too.
-- [CARD-006] A no-network test guard that spies `net.Socket.prototype.connect` must handle its
-  **polymorphic first arg**: a port number (host in arg 2), an IPC path string (a unix socket — allow),
-  or an options object `{host, port, path}`. Read the host from `arg.host ?? arg.path` for the object
-  form and arg 2 for the number form; treat `undefined`/`''`/`localhost`/`127.0.0.1`/`::1`/
-  `::ffff:127.0.0.1` as loopback. undici (global `fetch`) connects via net sockets, so the spy catches
-  `fetch` too — asserting on the connection TARGET (loopback vs not) catches a GitHub call by remote
-  address without real DNS/network. Design decisions recorded in ADR-0010/ADR-0011.
+- [CARD-006] A no-network test guard that spies `net.Socket.prototype.connect` must handle TWO calling
+  shapes at that interception point (confirmed by direct reproduction, CARD-006 impl): (a) a **direct**
+  `socket.connect(port, host)` / `socket.connect(options)` passes normal spread args — first arg is
+  polymorphic (port number with host in arg 2 / IPC path string — a unix socket, allow / `{host,port,path}`
+  object); BUT (b) `net.connect(...)`/`net.createConnection(...)` — **and undici's global `fetch`, which
+  routes through them** — pre-normalize and call `Socket.prototype.connect` with a **SINGLE array argument**
+  (`[options, callback, Symbol(normalizedArgs)]`), NOT spread. The spy must detect
+  `args.length === 1 && Array.isArray(args[0])` and unwrap `args[0][0]` before reading host/port, or it
+  silently reads an empty options object and never flags a real non-loopback (`fetch`) connection. Treat
+  `undefined`/`''`/`localhost`/`127.0.0.1`/`::1`/`::ffff:127.0.0.1` as loopback; assert on the connection
+  TARGET so a GitHub call is caught by remote address without real DNS/network. Design in ADR-0010/ADR-0011.
+- [CARD-006] `http-server.ts`'s route dispatch reads `req.url` directly, never `req.url ?? ''` — Node's
+  `IncomingMessage.url` is always populated in a real server request handler despite the optional TS type,
+  so a `?? ''` fallback is dead code that permanently costs one uncovered branch against the 90% coverage
+  target for no behavioral benefit.
