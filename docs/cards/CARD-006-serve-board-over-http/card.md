@@ -12,7 +12,7 @@ branch: feature/006-serve-board-over-http
 worktree: .worktrees/CARD-006-serve-board-over-http-impl
 design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/56
 pr_urls: []
-split_slices: 0
+split_slices: 2
 adrs: [ADR-0010, ADR-0011]
 reworks:
   slice: 0
