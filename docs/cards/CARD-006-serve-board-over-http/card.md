@@ -4,8 +4,8 @@ type: feature
 layer: api
 reqs: [REQ-001, REQ-006, REQ-010, REQ-016]
 title: Serve the parsed board over HTTP
-status: review
-phase: review
+status: deliver
+phase: deliver
 right_sized: true
 depends_on: [CARD-022]
 branch: feature/006-serve-board-over-http
