@@ -66,6 +66,17 @@ Ordered delivery milestones, authored by /refine.
 
     expect(parseMilestones(raw)).toEqual([{ name: 'M1 — Empty cards line', cardIds: [] }]);
   });
+
+  it('parses the same result from a CRLF-joined MILESTONES.md as the LF fixture (regression: CRLF dropped all milestones)', () => {
+    const lfRaw = '## M1 — X\n**Cards:** CARD-001, CARD-002\n\n## M2 — Y\n**Cards:** CARD-003\n';
+    const crlfRaw = lfRaw.replace(/\n/g, '\r\n');
+
+    expect(parseMilestones(crlfRaw)).toEqual(parseMilestones(lfRaw));
+    expect(parseMilestones(crlfRaw)).toEqual([
+      { name: 'M1 — X', cardIds: ['CARD-001', 'CARD-002'] },
+      { name: 'M2 — Y', cardIds: ['CARD-003'] },
+    ]);
+  });
 });
 
 const TWO_MILESTONE_FIXTURE = `## M1 — Toolchain and delivery pipeline

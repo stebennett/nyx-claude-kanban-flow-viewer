@@ -21,15 +21,22 @@ export function parseMilestones(raw: string): ParsedMilestone[] {
   const milestones: ParsedMilestone[] = [];
   let current: ParsedMilestone | null = null;
 
-  for (const line of raw.split('\n')) {
+  // Split on CRLF or bare LF so a CRLF-checked-out MILESTONES.md (e.g. git-for-Windows
+  // core.autocrlf=true) doesn't leave a trailing \r on every line — \r fails every
+  // pattern below (`.` excludes it, and `$` without the `m` flag won't match before it),
+  // so headings would otherwise fall through to the terminator branch and be dropped.
+  for (const line of raw.split(/\r\n|\n/)) {
     const headingMatch = line.match(MILESTONE_HEADING_PATTERN);
     if (headingMatch) {
+      // Group 1 is mandatory in the pattern (no `?`), so it's always populated here.
       current = { name: headingMatch[1]!.trim(), cardIds: [] };
       milestones.push(current);
       continue;
     }
 
     if (ANY_HEADING_PATTERN.test(line)) {
+      // Any non-milestone heading (e.g. `## Notes`) closes the current block, so a
+      // stray `**Cards:**` line under it can't leak into the milestone above.
       current = null;
       continue;
     }
