@@ -11,3 +11,5 @@
 | [ADR-0007](0007-release-workflow-reuse-gates-sha-pinned-provenance-publish.md) | Release on a vX.Y.Z tag: reuse CI gates, SHA-pinned actions, provenance publish | Superseded by ADR-0009 | CARD-003 | 2026-07-18 |
 | [ADR-0008](0008-board-walk-total-function-degrades-to-parseerrors.md) | The board walk is a total function: buildSnapshot degrades all file and parse failures into the snapshot, never throws | Accepted | CARD-021 | 2026-07-18 |
 | [ADR-0009](0009-publish-via-npm-trusted-publishers-oidc-instead-of-npm-token.md) | Publish via npm Trusted Publishers (OIDC) instead of an NPM_TOKEN secret | Accepted | CARD-003 | 2026-07-20 |
+| [ADR-0010](0010-first-http-server-node-http-factory-json-api-contract.md) | First HTTP server: node:http with a createServer factory and a JSON /api/* contract | Accepted | CARD-006 | 2026-07-20 |
+| [ADR-0011](0011-req-001-enforced-suite-wide-by-a-shared-server-guard.md) | REQ-001 enforced suite-wide by a shared server-guard, not per card | Accepted | CARD-006 | 2026-07-20 |
