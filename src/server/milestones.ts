@@ -1,3 +1,5 @@
+import type { CardModel, MilestoneProgress } from './card-model.js';
+
 interface ParsedMilestone {
   name: string;
   cardIds: string[];
@@ -38,4 +40,26 @@ export function parseMilestones(raw: string): ParsedMilestone[] {
   }
 
   return milestones;
+}
+
+/**
+ * Derives per-milestone completion from the raw MILESTONES.md text and the
+ * already-parsed cards. `done` counts only cards whose `status === 'done'`
+ * (the spec's sole terminal status — `split`/`superseded` do NOT count);
+ * `total` counts every listed id, so a milestone id with no parsed card
+ * contributes to `total` but never to `done` and never throws (mirrors the
+ * board walk's totality, ADR-0008).
+ */
+export function deriveMilestones(
+  raw: string,
+  cards: readonly Pick<CardModel, 'id' | 'status'>[],
+): MilestoneProgress[] {
+  const statusById = new Map(cards.map((c) => [c.id, c.status]));
+
+  return parseMilestones(raw).map(({ name, cardIds }) => ({
+    name,
+    cardIds,
+    total: cardIds.length,
+    done: cardIds.filter((id) => statusById.get(id) === 'done').length,
+  }));
 }
