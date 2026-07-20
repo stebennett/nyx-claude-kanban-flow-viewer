@@ -1,25 +1,27 @@
-## CARD-022 — design: Add milestone progress to the board snapshot   [task · domain]
+## CARD-022 — Add milestone progress to the board snapshot   [task · domain]
 
 ### Why
-Completes REQ-019's snapshot shape and gives the board its per-milestone completion view. Parses `MILESTONES.md` and derives each milestone's `done`/`total` from the already-parsed `cards`, wiring a `milestones` array into the snapshot `buildSnapshot` (CARD-021) assembles — **additively**, without disturbing the existing cards/config/parseErrors walk.
+Completes REQ-019's snapshot shape and gives the board its per-milestone completion view. Parses `MILESTONES.md` and derives each milestone's `done`/`total` from the already-parsed `cards`, wiring a `milestones` array into the snapshot `buildSnapshot` (CARD-021) assembles — **additively**, without disturbing the existing cards/config/parseErrors walk. Consumed downstream by CARD-006 (UI milestones strip, REQ-031).
 
-### Design summary
-- New **dependency-free `src/server/milestones.ts`** with two pure functions: `parseMilestones(raw)` (structural parse of `MILESTONES.md`) and `deriveMilestones(raw, cards)` (done/total from parsed card status) — no `fs`, no gray-matter.
-- `parseMilestones` scans lines with **fixed anchored patterns** (`/^##\s+(M\d+.*)$/` heading, `/^\s*\*\*Cards:\*\*/` card line, `/CARD-\d+/g` ids) — deliberately **not** `extractSection`, whose unescaped-heading RegExp interpolation is a known trap and can't match dynamic `M<N> — …` headings ([CARD-019→020]).
-- `done` = count of a milestone's `cardIds` whose resolved card has `status === 'done'`; `total` = `cardIds.length`. A referenced id with **no parsed card counts to `total`, never to `done`, and never throws** — mirrors ADR-0008 totality (and `readConfig`'s silent-absent branch).
-- `MilestoneProgress` type lands additively in the dependency-free `card-model.ts` (ADR-0005 / [CARD-021]); `buildSnapshot` owns the one `readFileSync` and places `milestones` between `cards` and `parseErrors` (REQ-019 key order).
-- 3 TDD tasks (tests-first). Note: `build-snapshot.test.ts:76` intentionally flips from `not.toHaveProperty('milestones')` to `toHaveProperty` — a modify-existing-test step, not a regression.
+### What changed
+- New **dependency-free `src/server/milestones.ts`** (no `fs`, no gray-matter):
+  - `parseMilestones(raw)` — structural line-scan (split on `/\r\n|\n/`, **CRLF-safe**) with fixed anchored regexes (`/^##\s+(M\d+.*)$/` heading, `/^\s*\*\*Cards:\*\*/` card line, `/CARD-\d+/g` ids) — deliberately not `extractSection` (the unescaped-heading regex trap).
+  - `deriveMilestones(raw, cards)` — `done` = count of a milestone's `cardIds` whose card has `status === 'done'`; `total` = `cardIds.length`. A referenced id with no parsed card counts to `total`, never `done`, never throws (ADR-0008 totality).
+- `MilestoneProgress` type + `milestones` field on `BoardSnapshot` in the dependency-free `card-model.ts` (ADR-0005, additive).
+- `build-snapshot.ts`: `readMilestonesRaw` (sole `readFileSync`, mirrors `readConfig`'s silent-absent → `''`), wires `deriveMilestones` in, places `milestones` between `cards` and `parseErrors` (REQ-019 key order).
+- `tsconfig.test.json` include entry for the new module.
 
-### Acceptance criteria (sharpened)
-- **AC-1 (REQ-004):** `MILESTONES.md` parses into milestones with `name`, `cardIds`, `done`, `total`.
-- **AC-2 (REQ-019):** `milestones` is correctly derived from the parsed `cards`' `status` under mixed completion (done/non-done/absent).
+### Acceptance criteria
+- [x] AC-1 (REQ-004): `MILESTONES.md` parses into `name`, `cardIds`, `done`, `total`.
+- [x] AC-2 (REQ-019): `milestones` derived from parsed cards' `status` under mixed completion (done/non-done/absent).
 
-### ADRs in this PR
-- None. `MilestoneProgress` applies ADR-0005 additively; the done-rule is a cheap-to-reverse KNOWLEDGE convention, below the ADR bar (design-check confirmed).
+### Testing
+`milestones.test.ts` (12) + updated `build-snapshot.test.ts` — **105/105 tests green**, coverage **100% on `milestones.ts`** (overall 100/98.85/100/100). Seeded fast-check property (seed `20260720`, 50 runs) with an oracle independent of the impl. Gates: lint, `tsc -b --noEmit`, build all clean.
 
-### Open questions / decisions deferred
-None.
+### Review
+Full 8-lens panel. First pass caught a **CRLF blocking defect** (functionality + tests, independently): `parseMilestones` dropped all milestones on a CRLF-checked-out `MILESTONES.md`. Fixed test-first (`split('\n')` → `split(/\r\n|\n/)` + a CRLF regression test); both lenses re-ran clean. Final verdict **pass** (advisories only). ~325 changed lines — no split.
 
-Full design: `docs/cards/CARD-022-milestone-progress/design.md` (in this diff). Merging this PR approves the design and unblocks implementation — the implementation branch is cut from main after this merges, and the code arrives as a second PR.
+### Knowledge
+`[CARD-022]` milestone-completion rule; the no-`extractSection` regex-trap gotcha; the CRLF line-scanner gotcha; the fast-check-arbitrary and CRLF-regression-literal test gotchas — see `KNOWLEDGE.md`.
 
-🤖 Design delivered via /kanban
+🤖 Card delivered via /kanban
