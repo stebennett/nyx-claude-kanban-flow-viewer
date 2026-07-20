@@ -13,7 +13,7 @@ worktree: .worktrees/CARD-003-release-on-version-tag
 design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/28
 pr_urls: [https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/39]
 split_slices: 0
-adrs: [ADR-0007]
+adrs: [ADR-0007, ADR-0009]
 reworks:
   slice: 0
   design: 0
@@ -49,9 +49,12 @@ CARD-002's gates via `workflow_call` is the default route; duplicating them inli
 `release.yml` requires explicit justification, because the two gate lists can then drift
 and REQ-037 becomes false without any card's criteria failing.
 
-**Manual prerequisite:** publishing needs an `NPM_TOKEN` secret configured on the repo. No
-card can create it. The workflow also needs `permissions: id-token: write` (for provenance)
-and `contents: write` (for the Release).
+**Manual prerequisite:** publishing uses npm **Trusted Publishers** (OIDC) — no `NPM_TOKEN`
+secret. Before the first `vX.Y.Z` tag, a Trusted Publisher must be configured for the package
+on npmjs.com pointing at this repo's `.github/workflows/release.yml`; no card can create it.
+The workflow needs `permissions: id-token: write` (the OIDC publish credential) and
+`contents: write` (for the Release). Auth mechanism reversed on PR #39 review — see ADR-0009
+(supersedes ADR-0007) and `feedback.md`.
 
 `right_sized: true` at intake, so the slice phase is skipped: `estimated_lines: 110` from
 `card-intake-checker` (INT-SIZED) is this card's only pre-code size check. Both design

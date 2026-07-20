@@ -3,7 +3,7 @@
 _Rendered by `/kanban`. Do not hand-edit below the header._
 
 **WIP / Gates:** wip_limit 3 · slice=auto · design=pr · deliver=auto
-_last rendered: 2026-07-19_
+_last rendered: 2026-07-20_
 
 ## Backlog
 - CARD-022 — Add milestone progress to the board snapshot · backlog [M2]
@@ -32,7 +32,7 @@ _last rendered: 2026-07-19_
 ## Review
 
 ## Deliver
-- CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · deliver · task/003-release-on-version-tag [M1] · PR #39 open — deliver-check ✓, awaiting human merge
+- CARD-003 — Publish npm package and GitHub Release on a vX.Y.Z tag · deliver · task/003-release-on-version-tag [M1] · PR #39 open — review comment addressed (→ npm Trusted Publishers, ADR-0009 supersedes ADR-0007), CI re-running, awaiting human merge
 - CARD-021 — Assemble a board snapshot from cards, config and parse errors · deliver · task/021-assemble-board-snapshot [M2] · split: 2 slices · PR 1/2 #45 open — deliver-check ✓, awaiting human merge (then slice 2/2)
 
 ## Blocked
