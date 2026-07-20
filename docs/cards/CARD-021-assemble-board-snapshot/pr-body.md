@@ -1,40 +1,27 @@
-## CARD-021 — Assemble a board snapshot from cards, config and parse errors (slice 1 of 2: types)   [task · domain]
+## CARD-021 — Assemble a board snapshot from cards, config and parse errors (slice 2 of 2)   [task]
+
+_Second and final slice of a 2-way carve (branch was 507 lines, 7 over the 500 cap). **Slice 1 — the `BoardConfig`/`ParseError`/`BoardSnapshot` types — shipped in #45** and is already on `main`; this slice adds the implementation that consumes them. See `split.md`._
 
 ### Why
-The board API's foundational read needs a snapshot contract before any consumer (`GET /api/board`, the
-SSE stream, the UI) can depend on it. This slice ships **only the JSON-contract type shapes** — the
-board walk that produces them is the sibling **slice 2** (`build-snapshot.ts` + its test suite), which
-merges next, onto a `main` that already carries these types.
+`buildSnapshot` walks the board directory and assembles a complete board snapshot — `generatedAt`, `projectName`, `config`, `cards`, `parseErrors` — as a **total function**: every file-read and parse failure is degraded into `parseErrors` rather than thrown, so one malformed `card.md` can never take down the walk (ADR-0008).
 
 ### What changed
-- `src/server/card-model.ts` (+17): three new exported interfaces appended to the dependency-free
-  JSON-contract type module (ADR-0005's home for `CardModel`/`PhaseDocsPresent`):
-  - `BoardConfig` — `{ wipLimit: number }` (from `config.md`, REQ-003).
-  - `ParseError` — `{ path: string; error: string }` (board-relative path; the REQ-019/REQ-033 tray).
-  - `BoardSnapshot` — `{ generatedAt; projectName; config; cards; parseErrors }` (REQ-019). The
-    `milestones` field is deliberately absent — it is CARD-022's additive extension, not this card's.
-- Purely additive: no existing type is modified, and nothing consumes these interfaces yet.
+- `src/server/build-snapshot.ts` — the `buildSnapshot` total function (+85).
+- `src/server/build-snapshot.test.ts` — its exhaustive Vitest suite (+404): snapshot shape, `wipLimit` variants, and the malformed-card-still-parses-the-rest regression, plus the board-relative-path and gray-matter cache-poisoning regressions.
+- `tsconfig.test.json` — registers `build-snapshot.ts` in `include` (the TS6307 fix; inseparable from the file existing).
 
-### Acceptance criteria
-The card's three behavioral criteria (snapshot assembly, `config.wipLimit`, malformed-card handling) are
-delivered by **slice 2's** implementation and tests. This slice provides the type shapes they satisfy:
-- [x] `BoardSnapshot` carries `generatedAt`/`projectName`/`config`/`cards`/`parseErrors`, no `milestones` (REQ-019)
-- [x] `BoardConfig.wipLimit` shape for the `config.md` read (REQ-003)
-- [x] `ParseError` `{path, error}` shape for the parse-failure tray (REQ-019, REQ-033)
+### Acceptance criteria (all three delivered by this slice's tests)
+- [x] A snapshot carries `generatedAt`, `projectName`, `config`, `cards`, `parseErrors` (REQ-019; `milestones` is CARD-022's)
+- [x] `config.wipLimit` is read from `config.md` frontmatter (REQ-003)
+- [x] A malformed `card.md` lands in `parseErrors` with path and error while every other card still parses (REQ-033)
 
 ### Testing
-Standalone-green as a type-only, consumer-free addition: lint, `tsc -b --noEmit`, `npm test` (54 tests),
-and build all pass with only this slice applied to `origin/main` (see `split.md`'s pasted slice-1 gate
-output; `split-acceptance.md` confirms the slice traces to its claim and stands alone).
+`build-snapshot.test.ts` — 21 tests covering all three ACs via falsifiable assertions (incl. the `DEFAULT_WIP_LIMIT` pin and the cache-poisoning/board-relative-path regressions). Full suite green on the cumulative branch (slices 1+2): lint, typecheck, 75 tests, build — all EXIT:0 (`split.md`).
 
 ### Review
-Split of an oversized card (507 lines, 7 over the 500 cap) into 2 whole-file slices. Full 8-lens review
-panel on the whole card: **pass** (the totality bug and three test-strength gaps found and reworked).
-Split-check: **pass** (all 6 SPL-*). Per-slice acceptance trace: **pass**. ADR-0008 (the board walk is a
-total function) governs the behavior that lands in slice 2.
+Full opus lens panel passed on the whole branch before the carve; the per-slice `[acceptance]` re-run traced all three ACs to tests inside this slice and confirmed its `BoardConfig`/`ParseError`/`BoardSnapshot` imports resolve against slice 1 on `main` (`split-acceptance.md`, verdict: pass).
 
 ### Knowledge
-KNOWLEDGE [CARD-021]: gray-matter cache-poisoning guard; readdir-sort determinism; the types-lead-slice
-split convention; the SPL-GREEN pasted-output requirement.
+`[CARD-021]` ADR-0008 (buildSnapshot totality); gray-matter cache-poisoning gotcha — see `KNOWLEDGE.md`.
 
-🤖 Card delivered via /kanban (slice 1 of 2)
+🤖 Card delivered via /kanban
