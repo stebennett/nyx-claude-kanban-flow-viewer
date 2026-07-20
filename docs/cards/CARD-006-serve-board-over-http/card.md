@@ -22,7 +22,7 @@ reworks:
   deliver: 0
 review_lenses_failed: [functionality, tests]
 estimated_lines: 313
-actual_lines: ""
+actual_lines: 387
 started: 2026-07-20
 delivered: ""
 created: 2026-07-17

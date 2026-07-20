@@ -30,7 +30,7 @@ _last rendered: 2026-07-20_
 ## Review
 
 ## Deliver
-- CARD-006 — Serve the parsed board over HTTP · deliver · feature/006-serve-board-over-http [M2] · split: 2 slices · PR 1/2 #58 open (guard) · checking deliver
+- CARD-006 — Serve the parsed board over HTTP · deliver · feature/006-serve-board-over-http [M2] · split: 2 slices · PR 1/2 #58 open (guard) — deliver-check ✓, awaiting human merge (then slice 2/2)
 
 ## Blocked
 
