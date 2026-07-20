@@ -10,7 +10,7 @@ right_sized: true
 depends_on: [CARD-021, CARD-019, CARD-020]
 branch: task/022-milestone-progress-design
 worktree: .worktrees/CARD-022-milestone-progress
-design_pr_url: ""
+design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/52
 pr_urls: []
 split_slices: 0
 adrs: []
