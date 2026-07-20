@@ -338,3 +338,6 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   LF); the whole-branch review's functionality + tests lenses caught it, fixed in `ed03641`.
   `parse-card.ts`'s `extractSection` is only *accidentally* CRLF-safe (its trailing `\s*$` absorbs the
   `\r`) — don't rely on that accident; split on `/\r\n|\n/` explicitly.
+- [CARD-022] A CRLF-vs-LF regression test must pin a **literal** hardcoded expected value, not only a
+  differential compare (`parseX(crlf)` toEqual `parseX(lf)`): the differential alone passes vacuously if a
+  bug degrades both sides to the same wrong value (e.g. `[]` on both). Assert the literal parsed array too.

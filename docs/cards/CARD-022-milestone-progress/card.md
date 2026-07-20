@@ -4,8 +4,8 @@ type: task
 layer: domain
 reqs: [REQ-004, REQ-019]
 title: Add milestone progress to the board snapshot
-status: review
-phase: review
+status: deliver
+phase: deliver
 right_sized: true
 depends_on: [CARD-021, CARD-019, CARD-020]
 branch: task/022-milestone-progress
@@ -20,7 +20,7 @@ reworks:
   implement: 1
   split: 0
   deliver: 0
-review_lenses_failed: [functionality, tests]
+review_lenses_failed: []
 estimated_lines: 280
 actual_lines: ""
 started: 2026-07-20
