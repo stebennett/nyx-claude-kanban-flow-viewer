@@ -4,8 +4,8 @@ type: feature
 layer: api
 reqs: [REQ-001, REQ-006, REQ-010, REQ-016]
 title: Serve the parsed board over HTTP
-status: backlog
-phase: backlog
+status: slice
+phase: slice
 right_sized: ""
 depends_on: [CARD-022]
 branch: ""
@@ -23,7 +23,7 @@ reworks:
 review_lenses_failed: []
 estimated_lines: 313
 actual_lines: ""
-started: ""
+started: 2026-07-20
 delivered: ""
 created: 2026-07-17
 ---
