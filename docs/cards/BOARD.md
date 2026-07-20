@@ -27,9 +27,9 @@ _last rendered: 2026-07-20_
 ## Implement
 
 ## Test
-- CARD-022 — Add milestone progress to the board snapshot · test · task/022-milestone-progress [M2] · CRLF fix (rework 1/2) — re-testing (then re-review functionality+tests)
 
 ## Review
+- CARD-022 — Add milestone progress to the board snapshot · review · task/022-milestone-progress [M2] · re-review (functionality+tests) after CRLF fix
 
 ## Review
 

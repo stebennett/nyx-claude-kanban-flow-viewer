@@ -4,8 +4,8 @@ type: task
 layer: domain
 reqs: [REQ-004, REQ-019]
 title: Add milestone progress to the board snapshot
-status: test
-phase: test
+status: review
+phase: review
 right_sized: true
 depends_on: [CARD-021, CARD-019, CARD-020]
 branch: task/022-milestone-progress
