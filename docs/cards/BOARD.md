@@ -24,9 +24,9 @@ _last rendered: 2026-07-20_
 ## Design
 
 ## Implement
+- CARD-006 — Serve the parsed board over HTTP · implement · feature/006-serve-board-over-http [M2] · review panel FAIL (pathname dispatch + untested guard branch) — reworking (rework 1/2)
 
 ## Test
-- CARD-006 — Serve the parsed board over HTTP · test · feature/006-serve-board-over-http [M2] · impl complete (120 tests, http-server 100%) — checking (tester)
 
 ## Review
 
