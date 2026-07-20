@@ -356,3 +356,15 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   `IncomingMessage.url` is always populated in a real server request handler despite the optional TS type,
   so a `?? ''` fallback is dead code that permanently costs one uncovered branch against the 90% coverage
   target for no behavioral benefit.
+- [CARD-006] Testing a `net.Socket.prototype.connect` spy's per-arg-SHAPE branches needs an explicit
+  test per shape, not per outcome: `net.connect(port, host)` (the factory) and `fetch`/undici both
+  normalize to the array-wrapped `[options,cb]` form before `Socket.prototype.connect`, so a test using
+  either NEVER reaches the spy's `typeof first === 'number'` (direct `socket.connect(port, host)`) branch
+  — it stays a surviving mutant, and `test/**` is outside coverage `include` so the gate won't flag it.
+  Hit that branch directly with `new net.Socket().connect(port, host)`. And **fail closed**: a REQ-001
+  guard that maps "no resolvable host" to loopback-allowed is fail-open (an options object with none of
+  host/hostname/path silently passes) — classify shapes into allow/host/unrecognized and BLOCK
+  unrecognized; every real caller (fetch/https) always sets host/hostname/path, so it costs nothing legit.
+- [CARD-006] `index.ts`'s server binds `.listen(PORT, '127.0.0.1', cb)` (loopback), NOT `.listen(PORT, cb)`
+  — the host-less form binds all interfaces (0.0.0.0/::), exposing the read-only board to the LAN while the
+  log claims `http://localhost`. Tests bind `127.0.0.1`; production must match. A `--host` flag is CARD-018's.
