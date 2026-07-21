@@ -13,7 +13,7 @@ worktree: .worktrees/CARD-027-sse-snapshot-on-connect
 design_pr_url: ""
 pr_urls: []
 split_slices: 0
-adrs: []
+adrs: [ADR-0014]
 reworks:
   slice: 0
   design: 1

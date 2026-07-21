@@ -10,7 +10,7 @@ right_sized: true
 depends_on: [CARD-006]
 branch: feature/008-serve-phase-docs-design
 worktree: .worktrees/CARD-008-serve-phase-docs
-design_pr_url: ""
+design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/62
 pr_urls: []
 split_slices: 0
 adrs: [ADR-0013]

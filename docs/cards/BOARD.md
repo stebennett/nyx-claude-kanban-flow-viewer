@@ -26,8 +26,8 @@ _last rendered: 2026-07-21_
 
 ## Design
 - CARD-023 — CLI --board-dir flag · design · feature/023-cli-board-dir-flag-design [M2] · design PR #61 open (deliver-check pass, CI green) — awaiting merge · ADR-0012
-- CARD-008 — Serve a card's phase docs · design · feature/008-serve-phase-docs-design [M2] · design-check pass after 1 rework · ADR-0013 · opening design PR
-- CARD-027 — SSE endpoint sends the current snapshot on connect · design · feature/027-sse-snapshot-on-connect-design [M2] · re-checking design after rework 1/2 (DSG-AC-COVERED)
+- CARD-008 — Serve a card's phase docs · design · feature/008-serve-phase-docs-design [M2] · design PR #62 open · ADR-0013 · checking deliver · 1 slice + 1 design rework
+- CARD-027 — SSE endpoint sends the current snapshot on connect · design · feature/027-sse-snapshot-on-connect-design [M2] · design-check pass after 1 rework · ADR-0014 · opening design PR
 
 ## Implement
 
