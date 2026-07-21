@@ -58,6 +58,12 @@ where it is actually claimed.
 `reqs` carries REQ-006 by residence (the "CLI entry" and "small Node HTTP server" it
 enumerates); no AC cites it, which is correct for a structural REQ.
 
+self-fix 2026-07-21 · DLV-BODY-TRUE · implementation slice 2/2 — the PR #59 body claimed
+(twice) that "every server-level test body runs inside assertNoRepoWrites +
+assertNoNonLoopbackNetwork". Only the malformed-card test (L189) is guard-wrapped; the
+other five inject a snapshot provider and call withServer unwrapped. Corrected the claim on
+the branch + live PR #59 to state the real scope and why it is the right one.
+
 self-fix 2026-07-20 · DLV-BODY-TRUE · design — corrected the PR-body size attribution
 (was "~370 changed lines, design-check re-derived" — design-check has no size criterion;
 now cites slice-check SLC-SIZE ~320 / estimated_lines 313). Fixed on the branch + live PR #56.
