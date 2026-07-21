@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { DEFAULT_BOARD_DIR, EXIT_USAGE, USAGE, parseArgs } from './args.js';
+import path from 'node:path';
+import { DEFAULT_BOARD_DIR, EXIT_USAGE, USAGE, parseArgs, resolvePaths } from './args.js';
 
 describe('args module constants', () => {
   it('DEFAULT_BOARD_DIR is docs/cards (REQ-012)', () => {
@@ -137,5 +138,39 @@ describe('parseArgs invariants', () => {
       }),
       { seed: 20260721, numRuns: 200 },
     );
+  });
+});
+
+describe('resolvePaths', () => {
+  it('resolves boardDir against the repo root', () => {
+    const resolved = resolvePaths({ targetRepo: '/tmp/repo', boardDir: 'boards/alt' });
+
+    expect(resolved.boardDirPath).toBe('/tmp/repo/boards/alt');
+  });
+
+  it('projectName is the repo directory basename, not the board dir', () => {
+    const resolved = resolvePaths({ targetRepo: '/tmp/my-repo', boardDir: 'boards/alt' });
+
+    expect(resolved.projectName).toBe('my-repo');
+  });
+
+  it('ignores a trailing slash on targetRepo', () => {
+    const resolved = resolvePaths({ targetRepo: '/tmp/my-repo/', boardDir: 'docs/cards' });
+
+    expect(resolved.projectName).toBe('my-repo');
+    expect(resolved.boardDirPath).toBe('/tmp/my-repo/docs/cards');
+  });
+
+  it('returns an absolute boardDirPath for a relative targetRepo', () => {
+    const resolved = resolvePaths({ targetRepo: '.', boardDir: 'docs/cards' });
+
+    expect(path.isAbsolute(resolved.boardDirPath)).toBe(true);
+    expect(resolved.boardDirPath.endsWith('/docs/cards')).toBe(true);
+  });
+
+  it('an absolute --board-dir value resolves to itself', () => {
+    const resolved = resolvePaths({ targetRepo: '/tmp/repo', boardDir: '/elsewhere/board' });
+
+    expect(resolved.boardDirPath).toBe('/elsewhere/board');
   });
 });

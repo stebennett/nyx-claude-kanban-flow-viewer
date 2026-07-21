@@ -5,6 +5,7 @@
  * coverage-excluded I/O edge — owns argv, stderr and the exit code; everything
  * decidable from the tokens alone lives here so it can be unit-tested.
  */
+import { basename, resolve } from 'node:path';
 
 /** REQ-012: the board location is repo-relative and defaults to `docs/cards`. */
 export const DEFAULT_BOARD_DIR = 'docs/cards';
@@ -23,6 +24,13 @@ export interface CliArgs {
 }
 
 export type ParsedArgs = { ok: true; args: CliArgs } | { ok: false; error: string };
+
+export interface ResolvedPaths {
+  /** ABSOLUTE path to the board — what `ServerOptions.boardDir` requires. */
+  boardDirPath: string;
+  /** Basename of the resolved REPO root, never of the board dir. */
+  projectName: string;
+}
 
 const BOARD_DIR_FLAG = '--board-dir';
 
@@ -82,4 +90,19 @@ export function parseArgs(argv: string[]): ParsedArgs {
   }
 
   return { ok: true, args: { targetRepo, boardDir } };
+}
+
+/**
+ * Path math only — no fs, so nothing here checks that the directory exists
+ * (that is REQ-014 / CARD-024). This is the ONLY conversion from the
+ * repo-relative `CliArgs.boardDir` to the absolute `boardDirPath` the server
+ * consumes; an absolute `--board-dir` value resolves to itself.
+ */
+export function resolvePaths(args: CliArgs): ResolvedPaths {
+  const repoRoot = resolve(args.targetRepo);
+
+  return {
+    boardDirPath: resolve(repoRoot, args.boardDir),
+    projectName: basename(repoRoot),
+  };
 }
