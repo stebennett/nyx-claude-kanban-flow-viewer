@@ -32,7 +32,7 @@ _last rendered: 2026-07-21 · 3 design PRs merged; implementation in flight_
 ## Test
 
 ## Review
-- CARD-027 — SSE endpoint sends the current snapshot on connect · review · feature/027-sse-snapshot-on-connect [M2] · ADR-0014 · re-test pass — re-running 2 failed lenses · 537 lines (37 OVER cap, split due)
+- CARD-027 — SSE endpoint sends the current snapshot on connect · split · feature/027-sse-snapshot-on-connect [M2] · ADR-0014 · review PASS (both blockers withdrawn) · 537 lines — pr-splitter running
 
 ## Deliver
 - CARD-023 — CLI --board-dir flag · deliver · feature/023-cli-board-dir-flag [M2] · ADR-0012 · PR #65 open · 518 lines (18 OVER cap — disclosed, split proposed) · DLV-BODY-TRUE self-fixed
