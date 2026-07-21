@@ -5,7 +5,7 @@ layer: api
 reqs: [REQ-017]
 title: SSE endpoint sends the current snapshot on connect
 status: implement
-phase: implement
+phase: test
 right_sized: true
 depends_on: [CARD-006]
 branch: feature/027-sse-snapshot-on-connect

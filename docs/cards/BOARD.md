@@ -27,10 +27,10 @@ _last rendered: 2026-07-21 · 3 design PRs merged; implementation in flight_
 ## Design
 
 ## Implement
-- CARD-027 — SSE endpoint sends the current snapshot on connect · implement · feature/027-sse-snapshot-on-connect [M2] · ADR-0014 · review FAILED (2 blocking: flaky AC-3 teardown, undetectable hub mutant) — reworking, reworks.implement 1/2
 - CARD-008 — Serve a card's phase docs · implement · feature/008-serve-phase-docs [M2] · design PR #62 merged · ADR-0013 · 1 slice + 1 design rework
 
 ## Test
+- CARD-027 — SSE endpoint sends the current snapshot on connect · test · feature/027-sse-snapshot-on-connect [M2] · ADR-0014 · rework 1/2 done — re-testing · 537 lines (37 OVER cap, split due at review)
 
 ## Review
 
