@@ -16,6 +16,7 @@
     "src/server/parse-card.ts",
     "src/server/build-snapshot.ts",
     "src/server/milestones.ts",
+    "src/server/http-server.ts",
     "vite.config.ts"
   ]
 }
