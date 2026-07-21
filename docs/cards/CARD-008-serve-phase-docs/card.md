@@ -16,7 +16,7 @@ split_slices: 0
 adrs: []
 reworks:
   slice: 1
-  design: 0
+  design: 1
   implement: 0
   split: 0
   deliver: 0
