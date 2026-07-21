@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import fc from 'fast-check';
 import { DEFAULT_BOARD_DIR, EXIT_USAGE, USAGE, parseArgs } from './args.js';
 
 describe('args module constants', () => {
@@ -95,5 +96,46 @@ describe('parseArgs error branches', () => {
       ok: false,
       error: 'unexpected argument: /tmp/b',
     });
+  });
+});
+
+// Segments start with an alphanumeric so a generated dir can never begin with
+// `--` (which parseArgs would legitimately read as an option, not a value) —
+// the arbitrary must produce inputs the code under test accepts (KNOWLEDGE
+// [CARD-022]). Seed pinned for reproducible CI failures ([CARD-021]).
+const repoArb = fc.stringMatching(/^\/tmp\/[a-z0-9_-]{1,12}$/);
+const boardDirArb = fc
+  .array(fc.stringMatching(/^[a-z0-9][a-z0-9_-]{0,7}$/), { minLength: 1, maxLength: 3 })
+  .map((segments) => segments.join('/'));
+
+describe('parseArgs invariants', () => {
+  it('is order-independent: the flag before or after the positional parses identically', () => {
+    fc.assert(
+      fc.property(repoArb, boardDirArb, (repo, dir) => {
+        const flagLast = parseArgs([repo, '--board-dir', dir]);
+        const flagFirst = parseArgs(['--board-dir', dir, repo]);
+
+        // Literal ground truth as well as the differential: a differential
+        // alone passes vacuously if both sides degrade the same way
+        // (KNOWLEDGE [CARD-022]).
+        const expected = { ok: true, args: { targetRepo: repo, boardDir: dir } };
+        expect(flagLast).toEqual(expected);
+        expect(flagFirst).toEqual(expected);
+        expect(flagFirst).toEqual(flagLast);
+      }),
+      { seed: 20260721, numRuns: 200 },
+    );
+  });
+
+  it('is total: never throws, always returns a result with a boolean ok', () => {
+    fc.assert(
+      fc.property(fc.array(fc.string(), { maxLength: 6 }), (argv) => {
+        const result = parseArgs(argv);
+
+        expect(typeof result).toBe('object');
+        expect(typeof result.ok).toBe('boolean');
+      }),
+      { seed: 20260721, numRuns: 200 },
+    );
   });
 });
