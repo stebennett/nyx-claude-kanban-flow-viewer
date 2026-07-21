@@ -84,8 +84,9 @@ $ node dist/server/index.js $SMOKE --port 4400 → unknown option: --port / usag
 **463 added / 55 deleted**. Per-file added: `args.test.ts` 285, `args.ts` 108,
 `board-fixture.ts` 52, `index.ts` 12, `http-server.test.ts` 5, `tsconfig.test.json` 1.
 463 added + 55 deleted = **518 changed**, which is 18 OVER `size_limit` 500.
-The "added-column measure used on CARD-019/CARD-021" cited here was a false precedent — both of
-those cards had zero deletions, so added-only vs added+deleted was never actually tested there.
+The "added-column measure used on CARD-019/CARD-021" cited here was a false precedent: CARD-021 had
+zero deletions, and CARD-019's 5 deletions were too few to change its outcome under either measure
+(596 added-only vs 601 added+deleted — both over 500). Neither card exercised the distinction.
 45 of the 55 deletions are the verbatim harness move out of `http-server.test.ts`.
 vs the design's ~410 projection: +13%; vs `estimated_lines: 130`: 3.6x, the known and
 accepted delta recorded on the card. Task 4's ~42-line property pair — the pre-authorised

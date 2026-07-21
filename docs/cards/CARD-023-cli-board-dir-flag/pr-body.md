@@ -15,7 +15,7 @@ Design PR **#61** (ADR-0012) merged first; this is the implementation half.
 | `src/server/http-server.test.ts` | imports the shared harness; its 6 tests unchanged in substance |
 | `tsconfig.test.json` | `args.ts` added to `include` (TS6307) |
 
-**Size: `actual_lines: 518` (463 added + 55 deleted) against `size_limit` 500 — an 18-line (3.6%) breach.** Earlier revisions of this doc said "463 added lines against 500" and framed it as compliance. That was wrong: `checks/deliver.md` measures `added + deleted`. The "added-column precedent" cited from CARD-019/CARD-021 does not exist — both had zero deletions, so the distinction was never exercised. Breach disclosed, not concealed; `DLV-SIZE` is advisory-escalated, and a concrete split is proposed in `deliver-check.md`.
+**Size: `actual_lines: 518` (463 added + 55 deleted) against `size_limit` 500 — an 18-line (3.6%) breach.** Earlier revisions of this doc said "463 added lines against 500" and framed it as compliance. That was wrong: `checks/deliver.md` measures `added + deleted`. The "added-column precedent" cited from CARD-019/CARD-021 does not exist: CARD-021 had zero deletions, and CARD-019's 5 deletions were too few to change its outcome under either measure (596 added-only vs 601 added+deleted — both over 500). Neither card ever exercised the distinction. Breach disclosed, not concealed; `DLV-SIZE` is advisory-escalated, and a concrete split is proposed in `deliver-check.md`.
 
 ### How AC-2 is actually proven
 The card's AC-2 is intake-mandated: the flag must *parse* **and** the board at that path must be
