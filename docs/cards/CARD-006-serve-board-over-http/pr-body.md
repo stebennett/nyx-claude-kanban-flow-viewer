@@ -1,24 +1,27 @@
-## CARD-006 — Serve the parsed board over HTTP (slice 1 of 2)   [feature · api]
+## CARD-006 — Serve the parsed board over HTTP (slice 2 of 2)   [feature · api]
 
-_First slice of a 2-way carve (the reviewed branch was 679 lines, over the 500 cap). **This slice = the shared REQ-001 server-guard** (the dependency-free test tripwire). **Slice 2 (the HTTP server) follows** once this merges — it imports this guard. See `split.md`._
+_Final slice of a 2-way carve (the reviewed branch was 679 lines, over the 500 cap). **Slice 1 (the shared REQ-001 server-guard, PR #58) is already on `main`** — this slice's tests import it. This slice = **the HTTP server and CLI wiring**, and it carries both of the card's acceptance criteria. See `split.md`._
 
 ### Why
-The **shared, self-tested REQ-001 tripwire** (ADR-0011) that every server-level test reuses to prove the viewer never writes the target repo or calls GitHub. Lands first because slice 2's server test — and CARD-007/008/018 — import it.
+The first user-reachable slice of the product: `npx kanban-flow-viewer <repo>` starts a server and serves the real parsed board over HTTP. A `node:http` `createServer` factory (ADR-0010) exposes `GET /api/board` returning the snapshot `buildSnapshot` already assembles (CARD-021/022), and the CLI entry point wires it up.
 
 ### What changed
-- `test/server-guard.ts` (+161): `digestTree(dir)` (sorted board-relative paths + sha256), `assertNoRepoWrites(dir, body)` (tree digest equal before/after), `assertNoNonLoopbackNetwork(body)` (spies `net.Socket.prototype.connect`, **fails closed** on an unrecognized connect-arg shape, reads `.host`/`.hostname`/`.path`, handles the array-wrapped `net.connect`/`fetch` normalized form + the direct `socket.connect(port,host)` form, restores in `finally`). Imports only `node:*`.
-- `test/server-guard.test.ts` (+226): **17 self-tests** — proves the guard catches a real repo write, a real non-loopback `net.connect`, a direct `socket.connect(port,host)`, a non-loopback `fetch()`, and an IPv6 non-loopback target; allows loopback (incl. `::1`); and restores the patch on both success and throw.
+- `src/server/http-server.ts` (+45): `createServer(options): http.Server` per ADR-0010 — an **unlistened factory** (the caller owns the port, so tests bind `:0`), manual `(method, pathname)` dispatch. `GET /api/board` → 200 `application/json; charset=utf-8` with `JSON.stringify(snapshot())` (defaults to `buildSnapshot(options)`, injectable for tests). Anything else → 404 `{"error":"not found"}`; a throwing snapshot provider → 500 `{"error":"internal error"}` with no internal detail leaked. Dispatch matches `new URL(req.url ?? '/', …).pathname`, so `/api/board?x=1` serves and `/api/board/` stays a 404 (exact match).
+- `src/server/http-server.test.ts` (+218, 6 tests): the endpoint served over a real socket on an **ephemeral port** — 200 + correct content-type + snapshot body, `?query` still 200, unknown path 404, throwing provider 500-without-leak, and a **malformed-card fixture** proving snapshot totality through the live endpoint. Every server-level test body runs inside `assertNoRepoWrites` + `assertNoNonLoopbackNetwork` from slice 1's guard.
+- `src/server/index.ts` (+20/-8): CLI entry — missing `argv[2]` → usage on stderr and **exit 64**; otherwise resolve `boardDir`/`projectName` and `createServer(...).listen(4400, '127.0.0.1', …)` (loopback-only bind).
+- `tsconfig.test.json` (+1): `src/server/http-server.ts` added to `include`.
 
 ### Acceptance criteria
-This is the **lead infrastructure slice** — it delivers no card AC by itself (AC-2 is fully proven once slice 2 wraps the live `/api/board` endpoint in this guard). Its job is to stand alone as the reusable guard.
+- [x] `npx kanban-flow-viewer <path-to-repo>` starts a server on port 4400 and `GET /api/board` returns the snapshot (REQ-010, REQ-016) — the endpoint is proven over a real socket on an ephemeral port (per the card's design note, the *default* of 4400 and its auto-increment belong to CARD-018); `index.ts` binds 4400 on `127.0.0.1`, smoke-verified with `lsof` + `curl`.
+- [x] Running the viewer never writes to the target repository and makes no network call to GitHub (REQ-001) — every server-level test body is wrapped in slice 1's `assertNoRepoWrites` (tree digest equal before/after) and `assertNoNonLoopbackNetwork` (fails closed on an unrecognized connect-arg shape).
 
 ### Testing
-Slice-1 gates green standalone: lint, `tsc -b --noEmit`, build, `npm test` **122/122** (128 − the 6 http-server tests not yet present). `test/server-guard.ts` is outside coverage `include` per design, but its 17-test suite is mutation-verified (the number-arg connect branch reddens when gutted).
+Full-branch gates green: lint, `tsc -b --noEmit`, build, `npm test` **128/128** across 9 files. Coverage overall 100% stmts / 97.95% branch / 100% funcs / 100% lines; `http-server.ts` **100/90.9/100/100**, at or above the 90% target (the one uncovered branch is the `req.url ?? '/'` TypeScript-safety fallback, unreachable from a real request).
 
 ### Review
-Full 8-lens panel on the whole branch (1 rework fixing a pathname-dispatch bug + hardening this guard). Per-slice `[acceptance]` re-run confirmed this slice is a faithful additive subset that stands alone (`split-acceptance.md`). ADR-0011 records the design.
+Full 8-lens panel on the whole branch, with **one rework** that fixed two blocking findings — a pathname-dispatch bug (raw `req.url` made `/api/board?x=1` 404) and an untested, fail-open branch in the guard — plus six hardening fold-ins (fail-closed classification, `fetch()`-block and IPv6 cases, loopback bind). Both fixes are mutation-verified. The per-slice `[acceptance]` re-run confirmed this slice delivers both ACs and that its guard import resolves against slice 1 on `main` (`split-acceptance.md`). ADR-0010 records the `node:http` decision.
 
 ### Knowledge
-`[CARD-006]` net.connect arg shapes (direct vs array-wrapped), fail-closed guard classification, loopback bind — see `KNOWLEDGE.md`.
+`[CARD-006]` unlistened-factory testability, pathname-vs-`req.url` dispatch, snapshot-provider injection — see `KNOWLEDGE.md`.
 
 🤖 Card delivered via /kanban
