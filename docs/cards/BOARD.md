@@ -30,9 +30,9 @@ _last rendered: 2026-07-21 · 3 design PRs merged; implementation in flight_
 - CARD-008 — Serve a card's phase docs · implement · feature/008-serve-phase-docs [M2] · design PR #62 merged · ADR-0013 · 1 slice + 1 design rework
 
 ## Test
-- CARD-027 — SSE endpoint sends the current snapshot on connect · test · feature/027-sse-snapshot-on-connect [M2] · ADR-0014 · rework 1/2 done — re-testing · 537 lines (37 OVER cap, split due at review)
 
 ## Review
+- CARD-027 — SSE endpoint sends the current snapshot on connect · review · feature/027-sse-snapshot-on-connect [M2] · ADR-0014 · re-test pass — re-running 2 failed lenses · 537 lines (37 OVER cap, split due)
 
 ## Deliver
 - CARD-023 — CLI --board-dir flag · deliver · feature/023-cli-board-dir-flag [M2] · ADR-0012 · PR #65 open · 518 lines (18 OVER cap — disclosed, split proposed) · DLV-BODY-TRUE self-fixed

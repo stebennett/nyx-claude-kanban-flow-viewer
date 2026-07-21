@@ -520,3 +520,10 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   false claim**, not just whether it cleared the old one. Both times this project has asked (CARD-006,
   CARD-023) the answer was yes. A self-fix is unreviewed prose written under time pressure by the party
   whose error is being corrected — it is the least trustworthy text in the card, not the most.
+- [kanban] **Write markdown phase docs with the Write tool, never a bash heredoc.** A heredoc in this
+  environment silently strips every `#`-prefixed line — a doc written that way arrives with zero markdown
+  headers while every other character survives, so it looks fine in the tool result and is only caught by
+  `grep -c '^#'` on the file afterwards. Measured: two Write-tool docs had 10 and 11 headers intact; a
+  heredoc-written `test.md` had 0. Bullet-only appends (`- [CARD-NNN] …`, as this file uses) are
+  unaffected, which is why KNOWLEDGE.md survived the same treatment. If a heredoc is unavoidable, verify
+  with `grep -c '^#'` before committing.
