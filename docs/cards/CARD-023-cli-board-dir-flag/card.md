@@ -11,7 +11,7 @@ depends_on: [CARD-006]
 branch: feature/023-cli-board-dir-flag
 worktree: .worktrees/CARD-023-cli-board-dir-flag
 design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/61
-pr_urls: []
+pr_urls: [https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/65]
 split_slices: 0
 adrs: [ADR-0012]
 reworks:
@@ -22,7 +22,7 @@ reworks:
   deliver: 0
 review_lenses_failed: []
 estimated_lines: 130
-actual_lines: ""
+actual_lines: 463
 started: 2026-07-21
 delivered: ""
 created: 2026-07-21
