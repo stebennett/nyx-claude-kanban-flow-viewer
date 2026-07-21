@@ -1,53 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import type { AddressInfo } from 'node:net';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
-import { createServer, type ServerOptions } from './http-server.js';
+import { type ServerOptions } from './http-server.js';
 import { buildSnapshot } from './build-snapshot.js';
 import { assertNoRepoWrites, assertNoNonLoopbackNetwork } from '../../test/server-guard.js';
+import { writeFixtureTree, cleanupFixtures, withServer } from '../../test/board-fixture.js';
 
-const tmpDirs: string[] = [];
+const writeFixtureBoard = (files: Record<string, string>): string =>
+  writeFixtureTree(files, 'http-server-');
 
-function writeFixtureBoard(files: Record<string, string>): string {
-  const boardDir = mkdtempSync(path.join(tmpdir(), 'http-server-'));
-  tmpDirs.push(boardDir);
-
-  for (const [relPath, contents] of Object.entries(files)) {
-    const fullPath = path.join(boardDir, relPath);
-    mkdirSync(path.dirname(fullPath), { recursive: true });
-    writeFileSync(fullPath, contents);
-  }
-
-  return boardDir;
-}
-
-afterEach(() => {
-  for (const dir of tmpDirs.splice(0)) {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-/**
- * Starts a `createServer(options)` server on an ephemeral `:0` port, hands the
- * caller its base URL, and always closes the server afterwards (even if `cb` throws).
- */
-async function withServer<T>(
-  options: ServerOptions,
-  cb: (baseUrl: string) => Promise<T> | T,
-): Promise<T> {
-  const server = createServer(options);
-
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-
-  try {
-    const address = server.address() as AddressInfo;
-    const baseUrl = `http://127.0.0.1:${address.port}`;
-    return await cb(baseUrl);
-  } finally {
-    await new Promise<void>((resolve) => server.close(() => resolve()));
-  }
-}
+afterEach(cleanupFixtures);
 
 const VALID_CARD_1 = `---
 id: CARD-001
