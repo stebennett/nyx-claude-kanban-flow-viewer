@@ -470,3 +470,12 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   update the text and never move it. Do the transition as an explicit delete-from-old-section +
   insert-into-new-section edit, and **read the rendered section back** before committing: the status word
   and the heading above it must agree. Two of the three were caught only by reading the file afterwards.
+- [kanban] **Never dispatch a mutation-running reviewer into a worktree that other reviewers are reading
+  concurrently.** CARD-027's review panel ran 8 lenses in parallel against one worktree, and the
+  acceptance/tests lenses were told to run mutation probes and revert. The design lens observed the
+  worktree mid-mutation (`// MUTANT: no catch` uncommitted in `http-server.ts`) and correctly flagged
+  it. Two consequences: any lens reading working-tree files during that window can report a phantom
+  finding, and a lens that reverts is racing every other lens. Either serialise the mutation-running
+  lens, give it its own worktree, or instruct every lens to diff via git objects
+  (`git diff origin/main...<branch>`) and never trust working-tree contents. The design lens did exactly
+  that on its own initiative, which is why its verdict stands.
