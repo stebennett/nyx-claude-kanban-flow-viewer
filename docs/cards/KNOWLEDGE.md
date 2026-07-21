@@ -542,3 +542,16 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   an orphaned timed-out read consumes the next chunk and dropping the retention loses the first
   post-timeout frame. It cannot be exercised in CARD-027 (no path writes a second frame); CARD-029's first
   timeout-then-resume read is its first real exercise. **Do not "simplify" it away.**
+- [kanban] **N consecutive green runs against a flake reproduced at 1-in-K is weaker evidence than it
+  reads — do the arithmetic before calling a race fixed.** CARD-027: 126 combined green runs against a
+  1-in-45 flake leaves `(44/45)^126` ≈ 6% residual, i.e. ~94% confidence, not proof. A load-dependent race
+  also may not reproduce in an isolated probe (a 350-cycle cancel-first control never stuck), so a clean
+  differential is often unavailable. Accept such a fix on the **mechanism** — here, `controller.abort()`
+  drives undici's connection destroy, and cancel-first makes the later abort a guaranteed no-op — and
+  treat run counts as corroboration only. An `implement.md` that presents the counts as proof overstates.
+- [CARD-027] `ServerResponse.write()` never throws for a dead peer (re-probed, Node v22.15.0): live write
+  → `true`, write to a just-abandoned peer → `true`, write after the server's `'close'` → `false`; no sync
+  throw, no async `'error'`. So `publish`'s per-sink `try/catch` can never fire for a `ServerResponse` —
+  it guards only a non-`ServerResponse` `FrameSink`. **CARD-029 must not read that guard as its
+  dead-client defence**; pruning is owned by `res.on('close', unsubscribe)`, and back-pressure
+  (`write()` returning `false`) is still unhandled and scoped to CARD-029 by `design.md`.
