@@ -5,7 +5,7 @@ layer: api
 reqs: [REQ-012]
 title: CLI --board-dir flag
 status: implement
-phase: implement
+phase: test
 right_sized: true
 depends_on: [CARD-006]
 branch: feature/023-cli-board-dir-flag

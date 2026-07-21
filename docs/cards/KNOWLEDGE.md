@@ -426,3 +426,22 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   same clean 500 and the test stays green. Only a throw *after* `writeHead` exposes
   ERR_HTTP_HEADERS_SENT, and nothing in an SSE branch throws synchronously there — so the real defence
   is the merge-order instruction plus the ADR clause. State it that way rather than claiming test cover.
+- [CARD-023] A CLI token walk keeps 100% branch coverage under `noUncheckedIndexedAccess` by iterating
+  **values** (`for (const token of argv)`) and carrying a pending flag in a local
+  (`awaitingValueFor: string | undefined`), rather than looking ahead at `argv[i+1]` — the look-ahead
+  form forces a `?? ''` guard that is an unreachable branch charged against the 90% threshold (the
+  [CARD-019]/[CARD-006] trap). The pending-flag local also carries the flag name into its error message,
+  so `--board-dir requires a value` stays one template as CARD-025/026 add flags.
+- [CARD-023] In an end-to-end test whose point is *which* board gets served, do NOT pre-assert the
+  resolved path (`expect(boardDirPath).toBe(join(repo,'boards/alt'))`) before starting the server: the
+  pre-assert fails FIRST under the very mutation the test exists to catch, so the red evidence reads as a
+  path mismatch instead of the designed `expected [ 'CARD-001' ] to deeply equal [ 'CARD-777' ]`.
+  Observed here. Path shape belongs in the `resolvePaths` units (hand-written literals); the e2e should
+  assert only served content.
+- [CARD-023] The shared server-test harness now lives in `test/board-fixture.ts` —
+  `writeFixtureTree(files, prefix)`, `cleanupFixtures()` (owns the module-level tmp-dir list, call from
+  `afterEach`) and `withServer(options, cb)` (ephemeral `:0` port, closed in `finally`) — moved out of
+  `http-server.test.ts`. Any card needing a real server on a temp board imports it rather than
+  re-declaring; vitest's `test.include` is `test/**/*.test.ts`, so the non-`.test.ts` helper is never
+  collected as a suite. **Cross-card:** KNOWLEDGE [CARD-027]'s `closeAllConnections()` fix must land IN
+  this shared `withServer`, not in a private copy — every server-level suite now shares it.
