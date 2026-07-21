@@ -32,8 +32,9 @@
    `wipLimit` from the fixture, not `DEFAULT_WIP_LIMIT`).
 3. **Task 6 reverts its mutation** — reverted and re-run green before committing;
    `git diff --stat src/server/args.ts` was empty after each revert.
-4. **Size** — 463 added lines, under `size_limit` 500; task 4's property pair was kept
-   because the cap was not breached (see below).
+4. **Size** — 463 added / 55 deleted = **518 changed, 18 OVER `size_limit` 500** (see the Size
+   section; this line originally claimed "under", applying the wrong measure). Task 4's property
+   pair was kept on the mistaken belief the cap held.
 5–7. Recorded, no action needed at implement (ADR text was corrected by the orchestrator;
    the M2 `--port` interval is deliberate and pinned by `errors on an unknown option`).
 
@@ -82,12 +83,15 @@ $ node dist/server/index.js $SMOKE --port 4400 → unknown option: --port / usag
 `git diff --numstat origin/main`, excluding `package-lock.json` and `docs/cards/**`:
 **463 added / 55 deleted**. Per-file added: `args.test.ts` 285, `args.ts` 108,
 `board-fixture.ts` 52, `index.ts` 12, `http-server.test.ts` 5, `tsconfig.test.json` 1.
-463 < `size_limit` 500 (the added-column measure DLV-SIZE used on CARD-019/CARD-021).
+463 added + 55 deleted = **518 changed**, which is 18 OVER `size_limit` 500.
+The "added-column measure used on CARD-019/CARD-021" cited here was a false precedent — both of
+those cards had zero deletions, so added-only vs added+deleted was never actually tested there.
 45 of the 55 deletions are the verbatim harness move out of `http-server.test.ts`.
 vs the design's ~410 projection: +13%; vs `estimated_lines: 130`: 3.6x, the known and
 accepted delta recorded on the card. Task 4's ~42-line property pair — the pre-authorised
-cut — was **not** taken: the cap was not breached, and both properties are load-bearing
-(the order-independence one is what the task-4 mutation reddened).
+cut — was **not** taken, on the mistaken belief the cap held. Both properties are load-bearing
+(the order-independence one is what the task-4 mutation reddened), so cutting them is not the
+right remedy now; `deliver-check.md` proposes a clean two-slice split instead.
 
 ## Cross-card note for whoever merges second
 `withServer` now lives in the shared `test/board-fixture.ts`, not in `http-server.test.ts`.

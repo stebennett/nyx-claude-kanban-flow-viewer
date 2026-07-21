@@ -72,5 +72,6 @@ $ npm run build       → vite build ✓ + tsc -b tsconfig.server.json --force, 
   /api/board ×2, unmatched routes ×2, 500 contract ×1, totality+REQ-001 guard ×1) are present and
   green.
 - **Size**: `git diff --numstat origin/main -- . ':(exclude)package-lock.json'
-  ':(exclude)docs/cards/**'` re-derived independently → **463 added / 55 deleted**, matching
-  implement.md exactly, under `size_limit` 500.
+  ':(exclude)docs/cards/**'` re-derived independently → **463 added / 55 deleted = 518 changed**, matching
+  implement.md's raw figures. NOTE: `checks/deliver.md` sums added + deleted, so 518 is 18 OVER
+  `size_limit` 500 — this doc originally claimed "under", which was the wrong measure.

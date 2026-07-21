@@ -18,7 +18,9 @@ hostile argv; **tests** traced three independent mutations against the end-to-en
 re-checked the loopback bind survived the `index.ts` rewrite. Every claim in `implement.md`'s smoke
 transcript reproduced.
 
-The card is 463 added lines against `size_limit` 500 — no split needed.
+The card is **518 changed lines** (463 added + 55 deleted) against `size_limit` 500 — an
+18-line breach, disclosed at deliver-check. This review originally said "463 added … no split needed",
+which applied the wrong measure; `checks/deliver.md` sums added + deleted.
 
 ## Blocking findings
 None.
