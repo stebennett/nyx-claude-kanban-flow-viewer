@@ -497,7 +497,13 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   mutant indistinguishable, because the injected object is identical on every request. Observing the
   singleton's *state* proves subscription, not placement. To guard placement make **resolution** the
   observable: pass a counting accessor (`get x() { reads++; return x; }`) and assert `reads === 1` across
-  N requests — and pass that object **un-spread**, since `{ ...options, x }` invokes the getter.
+  N requests. **The spread hazard is the opposite of what it looks like** (corrected on CARD-027's
+  re-review — an earlier version of this entry got it backwards): `createServer({ ...options })` invokes
+  the getter **once at construction** and hands over a plain data property, so `reads === 1` holds whether
+  the singleton is resolved per-server or per-request — the assertion goes **silently vacuous** and the
+  very mutant it exists to catch passes. A comment is not enough. Make it enforceable: declare the
+  accessor **non-enumerable** (`Object.defineProperty(options, 'x', { enumerable: false, get() {…} })`),
+  so any spread drops the property entirely and the accompanying state assertion fails loudly at 0.
 - [kanban] A mutation→break map row must predict the assertion that fires **first**, not the semantically
   strongest one. CARD-027's double-call mutant was predicted to redden via `expect(calls).toBe(2)`; it
   actually reddens on an earlier value assertion and `calls` is never read. Order assertions to match the
@@ -527,3 +533,12 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   heredoc-written `test.md` had 0. Bullet-only appends (`- [CARD-NNN] …`, as this file uses) are
   unaffected, which is why KNOWLEDGE.md survived the same treatment. If a heredoc is unavoidable, verify
   with `grep -c '^#'` before committing.
+- [CARD-027→CARD-029] Two pieces of code ship **unreachable and therefore untested** in CARD-027, both
+  correctly deferred, neither carried on CARD-029's card: (1) `SnapshotHub.publish`'s per-sink
+  `try/catch` — nothing in CARD-027 calls `publish`, so "a dead sink must not abort the broadcast" has no
+  assertion; CARD-029, as first caller, owes the ~8-line pure test (subscribe a throwing `FrameSink` and a
+  recording one, `publish`, assert the recording one still received the frame) or must delete the guard.
+  (2) `openSse`'s `pending` read retention — a `ReadableStreamDefaultReader` **queues** read requests, so
+  an orphaned timed-out read consumes the next chunk and dropping the retention loses the first
+  post-timeout frame. It cannot be exercised in CARD-027 (no path writes a second frame); CARD-029's first
+  timeout-then-resume read is its first real exercise. **Do not "simplify" it away.**
