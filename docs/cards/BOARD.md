@@ -6,6 +6,10 @@ _Rendered by `/kanban`. Do not hand-edit below the header._
 _last rendered: 2026-07-21_
 
 ## Backlog
+- CARD-023 — CLI --board-dir flag · backlog [M2]
+- CARD-024 — CLI startup validation for a missing or non-board directory · backlog [M2]
+- CARD-025 — CLI --port flag with default and auto-increment · backlog [M2]
+- CARD-026 — CLI --no-open flag and default browser launch · backlog [M2]
 - CARD-009 — Serve the SPA and render eight flow columns · backlog [M3]
 - CARD-010 — Card anatomy · backlog [M3]
 - CARD-011 — Blocked flag, terminal drawer, and overflow column · backlog [M3]
@@ -17,9 +21,8 @@ _last rendered: 2026-07-21_
 - CARD-017 — Unparseable tray · backlog [M3]
 
 ## Slice
-- CARD-007 — Push live snapshots over SSE · slice [M2]
-- CARD-008 — Serve a card's phase docs · slice [M2]
-- CARD-018 — CLI flags and startup validation · slice [M2]
+- CARD-007 — Push live snapshots over SSE · slice [M2] · checking slice
+- CARD-008 — Serve a card's phase docs · slice [M2] · slice-check failed SLC-VERDICT (split not necessary) — re-slicing for keep-as-one, reworks.slice 1/2
 
 ## Design
 
@@ -46,11 +49,12 @@ _last rendered: 2026-07-21_
 ## Split
 - CARD-004 — Parse a card.md into the card model → split into CARD-019, CARD-020 [M2]
 - CARD-005 — Build a board snapshot from the board directory → split into CARD-021, CARD-022 [M2]
+- CARD-018 — CLI flags and startup validation → split into CARD-023, CARD-024, CARD-025, CARD-026 [M2]
 
 ## Superseded
 
 ## Milestones
 - M1 — Toolchain and delivery pipeline · 3/3 · complete
-- M2 — Headless board API · 5/8 · in progress
+- M2 — Headless board API · 5/11 · in progress
 - M3 — Live board UI · 0/6 · not started
 - M4 — Detail, milestones and activity · 0/3 · not started

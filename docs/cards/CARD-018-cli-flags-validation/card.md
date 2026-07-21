@@ -4,9 +4,9 @@ type: feature
 layer: api
 reqs: [REQ-011, REQ-012, REQ-013, REQ-014]
 title: CLI flags and startup validation
-status: slice
-phase: slice
-right_sized: ""
+status: split
+phase: split
+right_sized: false
 depends_on: [CARD-006]
 branch: ""
 worktree: ""
@@ -39,6 +39,12 @@ browser shut, and fail clearly and early when the target isn't a kanban-flow boa
 - [ ] A missing board dir, or one with neither `config.md` nor any `CARD-*` dir, exits non-zero with the "no kanban-flow board found — run /kanban-init?" message (REQ-014)
 
 ## Notes
+**Split into CARD-023, CARD-024, CARD-025, CARD-026** (2026-07-21) — one child per
+acceptance criterion / REQ, chained CARD-023 → CARD-024 → CARD-025 → CARD-026. This card is
+terminal: never scheduled, holds no WIP slot. The slice phase re-estimated it from the real
+files at ~605 lines (the slice-check independently derived ~630–780) against a `size_limit`
+of 500, versus its 305-line intake estimate.
+
 Split out of CARD-006 at intake, which projected to 528 lines against a `size_limit` of
 500. CARD-006 kept the HTTP server; this card took the flags and validation.
 CARD-007/008/009 depend on CARD-006, not on this card.
