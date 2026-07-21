@@ -479,3 +479,31 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   lens, give it its own worktree, or instruct every lens to diff via git objects
   (`git diff origin/main...<branch>`) and never trust working-tree contents. The design lens did exactly
   that on its own initiative, which is why its verdict stands.
+- [CARD-027] Closing an SSE connection in tests: call `controller.abort()` **before** `reader.cancel()`.
+  `cancel()` alone is not a guaranteed socket teardown, and once the body stream is closed a later
+  `abort()` is a no-op — the server's `res` stays alive and its `'close'` handler never runs. Swallow the
+  pending read's rejection first (`pending?.catch(() => undefined)`); abort-first is then safe (probed:
+  200 cycles, zero unhandled AbortErrors). The comment justifying cancel-first ("the reverse order
+  surfaces an unhandled AbortError") was wrong — the `.catch()` already covers it.
+- [CARD-027] Server-side SSE unsubscribe latency on loopback is **p50 3 ms / max 9 ms** (200 close
+  cycles). If a `subscriberCount` poll ever burns its whole budget, the teardown did not happen at all —
+  widening the timeout is not the fix, and re-running to green hides a real bug.
+- [CARD-027] `ServerResponse.write()` never throws synchronously for a dead peer: writing to a
+  just-abandoned response returns `true`, writing after its `'close'` returns `false`, and neither emits
+  an uncaught error (probed, Node v22.15.0). So broadcasting to a not-yet-unsubscribed socket is safe; a
+  throwing sink can only be a non-`ServerResponse` `FrameSink`.
+- [kanban] A per-server singleton written `const x = options.x ?? makeX()` can **never** be proven
+  per-server by a test that **injects** `options.x` — injection makes correct code and the per-request
+  mutant indistinguishable, because the injected object is identical on every request. Observing the
+  singleton's *state* proves subscription, not placement. To guard placement make **resolution** the
+  observable: pass a counting accessor (`get x() { reads++; return x; }`) and assert `reads === 1` across
+  N requests — and pass that object **un-spread**, since `{ ...options, x }` invokes the getter.
+- [kanban] A mutation→break map row must predict the assertion that fires **first**, not the semantically
+  strongest one. CARD-027's double-call mutant was predicted to redden via `expect(calls).toBe(2)`; it
+  actually reddens on an earlier value assertion and `calls` is never read. Order assertions to match the
+  mutation you claim to catch, or expect the red evidence to read differently than the design predicts.
+- [kanban] A design's mutation→break map is a **claim the implementer must re-verify against the test as
+  shipped**, not as specified: a fixture choice made during implementation (e.g. injecting a dependency
+  for observability) can silently invalidate a row that was true of the designed test. Any row whose
+  named test changed shape during implementation belongs in `implement.md`'s Deviations with the re-check
+  result.
