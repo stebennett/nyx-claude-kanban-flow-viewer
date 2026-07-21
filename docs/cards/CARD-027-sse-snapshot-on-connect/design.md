@@ -1,4 +1,4 @@
-# CARD-027 — SSE endpoint sends the current snapshot on connect · design
+# CARD-027 — SSE endpoint sends the current snapshot on connect · design (rework 1)
 
 ## Intent
 Extend the existing `node:http` server (ADR-0010) with `GET /api/events`: a Server-Sent-Events
@@ -16,11 +16,19 @@ clause only — the "on every change" clause is CARD-029's. It also lands the co
   on a temp fixture board, read until the first `\n\n`, compare against a direct `buildSnapshot`
   call with the same fixed `now`, plus fixture-derived cross-checks (`projectName`, card ids,
   `config.wipLimit`) computed without the server.
-- **AC-2 (REQ-017 + card AC2).** The response is not ended after the initial frame, and two
-  concurrent connections each receive their own current snapshot. Observable: (a) after reading
-  frame 1, a further bounded read (150 ms) rejects with the *timeout* error and **not** with the
-  *stream-ended* error — proving no EOF; (b) with connection 1 still open, opening connection 2
-  yields its own complete, correct frame and `hub.subscriberCount === 2`.
+- **AC-2 (REQ-017 + card AC2).** The response is not ended after the initial frame, and each
+  connection receives a snapshot **evaluated at its own connect time** — not a frame computed once
+  and replayed. Observables:
+  - **(a) stays open** — after reading frame 1, a further bounded read (300 ms) rejects with the
+    *timeout* error and **not** with the *stream-ended* error, proving no EOF.
+  - **(b) second connection, own current snapshot** — with connection A still open, connection B
+    yields its own complete, correct frame, and `hub.subscriberCount === 2`. Freshness is asserted
+    *separately from shape*, with a **call-varying provider** (`let calls = 0; snapshot: () => ({
+    ...base, projectName: \`p${++calls}\` })`): A's frame must carry `p1`, B's must carry `p2`, and
+    the provider must have been called exactly twice. A deep-equal against a static
+    `buildSnapshot(options)` under a pinned clock **cannot** discriminate a per-connection call from
+    a frame cached at `createServer` time (`generatedAt` is identical) — so both assertions ship,
+    the static one for shape and the varying one for freshness ([CARD-027] KNOWLEDGE).
 - **AC-3 (lifecycle hygiene, enabling REQ-034 `docs/spec.md:261-265`).** A client disconnect
   unsubscribes it: after closing both connections, `hub.subscriberCount` returns to `0` within a
   bounded poll. Without this, CARD-029's `publish` would write to dead sockets forever.
@@ -32,7 +40,9 @@ clause only — the "on every change" clause is CARD-029's. It also lands the co
 - `src/server/http-server.ts`: `GET /api/events` dispatch branch; `SSE_HEADERS`; `formatFrame`;
   `createSnapshotHub()` + the `SnapshotHub`/`FrameSink` types; `ServerOptions.hub?`.
 - `src/server/http-server.test.ts`: the `openSse` frame-reading helper, an `afterEach` connection
-  sweep, `server.closeAllConnections()` in the existing `withServer`, and the five new tests.
+  **and server** sweep, `server.closeAllConnections()` in the existing `withServer`, and seven new
+  tests (handshake, frame+stays-open, newline-title edge, two concurrent connections, per-connection
+  freshness, unsubscribe, 500).
 - `hub.publish` is **written but neither called nor asserted in this card** (slice-sanctioned; see
   Dependencies & assumptions).
 
@@ -54,46 +64,84 @@ clause only — the "on every change" clause is CARD-029's. It also lands the co
   `{"error":"internal error"}` 500 contract, and the `withServer`/`writeFixtureBoard` helpers.
   Both helpers are **local to `http-server.test.ts` and not exported** — the new tests live in that
   same file, so they are used directly with no import and no re-implementation.
+- **`http-server.test.ts` currently has SIX tests** (`it` blocks at lines 75, 108, 131, 144, 159,
+  189; six `ServerOptions` literals). Every "existing tests still pass" step below means those six.
+- **CARD-008 collision — the one thing to defend.** CARD-008 is in design against this same file: it
+  makes `ServerOptions.repoRoot` required and **hoists the per-route `try/catch` into one
+  handler-wide catch**. The textual conflict and the missing `repoRoot` on new option literals fail
+  loudly at compile time and are cheap. The dangerous part is silent: a handler-wide catch would
+  also wrap the SSE branch, so a throw *after* `writeHead(200, SSE_HEADERS)` would reach
+  `sendJson(res, 500, …)` with headers already sent — the exact `ERR_HTTP_HEADERS_SENT` crash this
+  design exists to prevent. **The `/api/events` branch must keep its OWN `try/catch`, scoped to the
+  pre-`writeHead` `snapshot()` call**, and must return before any outer catch can apply. Whichever
+  card merges second must preserve that scoping; task 5's test is the guard that reddens if it does
+  not.
 - `buildSnapshot` is total (ADR-0008); `BoardSnapshot` is the dependency-free contract in
   `card-model.ts` ([CARD-021]) and is imported as a type only.
 - Node ≥20, ESM (ADR-0001): `server.closeAllConnections()` (≥18.2), global `fetch`/undici, web
   `ReadableStream` readers and `AbortController` are all available. Node's `keepAliveTimeout` (5 s)
-  applies to *idle* connections between requests and does not kill an in-flight streaming response;
-  `server.requestTimeout` bounds request *receipt*, not response duration — so no server-side timer
-  truncates an SSE stream by default.
-- vitest 3 (`expect.poll(fn, {interval, timeout})`, available since 2.1) and its default 5 000 ms
-  test timeout; every in-test wait designed here is ≤2 000 ms so the test's own error always wins.
+  is defined as inactivity *after the last response is written* and cannot truncate an in-flight
+  streaming response.
+- **Assumption, not verified at design time:** `server.requestTimeout` (default 300 000 ms) bounds
+  request *receipt*, not response duration, so no server-side timer truncates an SSE stream by
+  default. Zero impact on this card (every wait here is ≤2 000 ms); the exposure is the long-lived
+  production stream CARD-029/CARD-012 inherit. **Task 6 confirms it empirically** and records the
+  observed result; if it is false, that is a KNOWLEDGE entry and a note for CARD-029, not a change
+  to this card.
+- vitest 3.2.7 (`expect.poll(fn, {interval, timeout})`, shipped in 2.1) and its default 5 000 ms
+  `testTimeout` (`vite.config.ts` sets none). **Per-wait budgets do not compose** ([CARD-027]
+  KNOWLEDGE): any test chaining more than one bounded wait gets an explicit `{ timeout: 10_000 }`,
+  and polls are bounded at 1 000 ms.
 - **`publish` has no caller and no assertion in this card** (`slice.md:38-41`, `card.md:47-50`,
   accepted at slice-check). It is one ~4-line function; a design/review/coverage check must not read
-  it as dead code. Coverage impact: 1 uncovered function out of ~40 in `src/server/**` (~97%) and
-  ~4 uncovered lines out of ~450 — the 90% thresholds (`vite.config.ts:17-22`) hold with room.
+  it as dead code. Coverage arithmetic: ~35 existing real functions under `src/server/**` minus
+  `index.ts`/`*.test.ts` plus ~7 added here ≈ **42**, so one uncovered ≈ **97.6%** against the
+  **global** 90% thresholds (`vite.config.ts:17-22` sets no `perFile`). This holds **only if
+  `publish` iterates with `for (const sink of sinks)`** — see Interfaces.
 - No REQ-001 acceptance claim is made here (no chokidar yet, per `card.md:52-53`), but per ADR-0011
   the main connect test still wraps its exercise in `assertNoRepoWrites`/`assertNoNonLoopbackNetwork`.
+- **Budget.** Re-derived size ≈ **276 lines** (`http-server.ts` +78, `http-server.test.ts` +198),
+  driven by `openSse` being realistically ~65 lines rather than the slice's 20 — the buffered
+  race-with-timeout reader must preserve the pending read, raise two distinguishable rejections and
+  cancel-then-abort on close. Against `estimated_lines: 195` and a 500-line cap: no breach, but with
+  this repo's 2.0-2.2× drift it lands near the cap. **If it trends over, cut in this order:**
+  (1) the newline-title edge test (task 2's second test, ~15 lines — `JSON.stringify`'s escaping is
+  the invariant and three mutation rows already cover `formatFrame`); (2) fold task 4's setup into
+  task 3's test body, keeping both sets of assertions. **Never cut:** the ADR-0011 guard wrap, the
+  500 test (task 5), or the call-varying freshness assertions (they are AC-2(b)'s only real
+  observable).
 
 ## Approach
 **Server.** One new dispatch branch beside `GET /api/board`, reusing the `snapshot` provider already
 resolved at the top of `handleRequest`:
 
 ```
-GET /api/events → snapshot()            // may throw → 500 JSON, headers not yet sent
+GET /api/events → snapshot()            // per connection, may throw → 500 JSON, headers not yet sent
                 → writeHead(200, SSE_HEADERS)
                 → res.write(formatFrame(current))   // flushes headers with the frame
                 → const off = hub.subscribe(res)
                 → res.on('close', off)              // response stays open
 ```
 
+`snapshot()` is evaluated **inside the request handler, once per connection** — never hoisted to
+`createServer` and never cached into a reusable frame. A client connecting mid-session must see the
+board as of its own connect, not as of server start; that is the whole point of AC-2(b), and the
+call-varying provider test is what enforces it.
+
 Calling `snapshot()` **before** `writeHead` is load-bearing: it is the only realistic thrower, so the
 catch can still emit the ADR-0010 JSON 500 rather than crashing on ERR_HTTP_HEADERS_SENT (an
-uncaught throw inside a `node:http` request listener takes the process down). `flushHeaders()` is
-deliberately *not* called — headers ride out with the initial frame, so deleting the frame reddens
-the header test too rather than leaving it silently green.
+uncaught throw inside a `node:http` request listener takes the process down). That catch stays
+scoped to this branch (see the CARD-008 bullet). `flushHeaders()` is deliberately *not* called —
+headers ride out with the initial frame, so deleting the frame reddens the header test too rather
+than leaving it silently green.
 
 The hub is a `Set<FrameSink>` where `FrameSink = { write(chunk: string): unknown }` — the narrowest
 type the hub needs, structurally satisfied by `ServerResponse`. `publish` serializes **one** frame
-and writes it to every sink (no per-connection closure, so the connect path carries no uncovered
-arrow function). It is injectable via `ServerOptions.hub` and defaults to one `createSnapshotHub()`
-per `createServer` call — never per request, which would give each connection a private hub and
-silently break CARD-029.
+and writes it to every sink with `for (const sink of sinks) sink.write(frame)` — **a `for…of`
+statement, not `sinks.forEach(cb)`**: a callback would add a second uncovered function and falsify
+"`publish` is the sole intentionally-uncovered function". It is injectable via `ServerOptions.hub`
+and defaults to one `createSnapshotHub()` per `createServer` call — never per request, which would
+give each connection a private hub and silently break CARD-029.
 
 **Framing.** `JSON.stringify` escapes every newline as `\n`, so no board content (a card title with an
 embedded newline, a CRLF-checked-out file — [CARD-022]) can ever inject a premature `\n\n` and split
@@ -110,30 +158,46 @@ a frame. That invariant is asserted with a newline-bearing fixture title rather 
   Nms` and `SSE stream ended before a complete frame`. That distinction is what makes "the
   connection stays open" a real assertion: `rejects.toThrow(/timed out/)` passes only if there was
   no EOF. A timed-out read keeps its pending `read()` promise for reuse, so no chunk is ever lost.
+- The **negative** read window is **300 ms**, not 150 ms. It is the one place a timeout is used as a
+  *positive* assertion, so it must not be able to pass for the wrong reason on a loaded runner
+  (~0.6 s total cost across the two uses). Task 6 additionally runs the `add res.end()` mutation to
+  confirm the message really flips from `/timed out/` to `/stream ended/`.
 - `close()` calls `reader.cancel()` **then** `controller.abort()` (that order avoids an unhandled
   AbortError on a pending read) and attaches a no-op `.catch()` to any abandoned read promise.
-- Every connection `openSse` creates is pushed to a module-level array swept by an `afterEach`
-  (mirroring the existing `tmpDirs` sweep), because vitest abandons a timed-out test's promise chain
-  and its `finally` never runs — `afterEach` still does.
+- Every connection `openSse` creates is pushed to a module-level array, **and every server
+  `withServer` starts is pushed to a second module-level array**, both swept by one `afterEach`
+  (mirroring the existing `tmpDirs` sweep at `http-server.test.ts:25-29`): connections first
+  (client-side abort), then for each still-listening server `closeAllConnections()` then `close()`.
+  This is required because vitest abandons a timed-out test's promise chain and its `finally` never
+  runs — `afterEach` still does ([CARD-027] KNOWLEDGE).
 - `withServer`'s `finally` gains `server.closeAllConnections()` before awaiting `close()`:
-  `server.close()` waits for in-flight responses, so a single open SSE socket would otherwise hang
-  the file forever. Existing request/response tests are unaffected (idempotent no-op for them).
+  `server.close()` never fires its callback while a response is in flight, so a single open SSE
+  socket would otherwise hang the file forever. **This is not a no-op for the six existing tests** —
+  each consumes its response body before the `finally`, leaving an *idle keep-alive* socket still
+  pooled by undici, which `closeAllConnections()` forcibly destroys. That is harmless here only
+  because every test binds a fresh `:0` port, so undici never reuses a destroyed socket for a later
+  origin ([CARD-027] KNOWLEDGE).
 
 **Alternatives considered.**
 (a) *Read the stream with raw `node:http.get` + `IncomingMessage` `'data'` events instead of `fetch`.*
-Rejected: the file's five existing tests all use `fetch`, and ADR-0011's network guard is already
+Rejected: the file's six existing tests all use `fetch`, and ADR-0011's network guard is already
 proven against undici's connect shape ([CARD-006]). Keep as the documented fallback if undici stream
 cancellation ever proves flaky.
 (b) *An `EventSource` polyfill / third-party SSE client in tests.* Rejected: a new devDependency to
 parse a two-line protocol, and it hides exactly the wire-format details AC-1 must assert.
 (c) *`createServer` returns `{ server, hub }`.* Rejected: breaks ADR-0010's `createServer(options):
-Server` signature, `index.ts` and all five existing tests, for no gain over injecting the hub.
+Server` signature, `index.ts` and all six existing tests, for no gain over injecting the hub.
 (d) *No hub at all in this card — just write the frame and end nothing.* Rejected: the unsubscribe
 path would be untestable and CARD-029 would have to retrofit connection tracking into a shipped
 endpoint; the slice explicitly places the hub here.
 (e) *A generic `nextFrame()` with no timeout, relying on vitest's 5 s test timeout.* Rejected: a
 vitest timeout abandons the chain, so servers and sockets leak and the whole file's teardown can
 hang — the exact CI poisoning this card must avoid.
+(f) *Assert AC-2(b) with the static deep-equal alone (the original design).* Rejected on
+design-check: with `now: FIXED` the two frames are byte-identical, so an implementation that
+evaluates `snapshot()` once in `createServer` and replays the cached frame passes. CARD-029's AC
+only covers broadcast to *already-connected* clients, so the mutant would survive that card too and
+ship as a stale board for anyone connecting mid-session. The call-varying provider is ~4 lines.
 
 ## Interfaces
 ```ts
@@ -150,6 +214,8 @@ export interface SnapshotHub {
   subscribe(sink: FrameSink): () => void;
   /**
    * Broadcasts one `data: <json>\n\n` frame to every subscriber.
+   * MUST iterate `for (const sink of sinks)` — a `forEach` callback would add a
+   * second uncovered function (see Dependencies & assumptions).
    * CARD-029's seam: NO caller and NO assertion in CARD-027 — deliberate, not dead code.
    */
   publish(snapshot: BoardSnapshot): void;
@@ -171,7 +237,8 @@ export function createServer(options: ServerOptions): Server; // signature uncha
 ```
 Module-private: `const SSE_HEADERS = { 'content-type': 'text/event-stream; charset=utf-8',
 'cache-control': 'no-cache, no-transform' }`; `formatFrame(snapshot: BoardSnapshot): string` →
-`` `data: ${JSON.stringify(snapshot)}\n\n` ``; `handleEvents(snapshot, hub, res): void`.
+`` `data: ${JSON.stringify(snapshot)}\n\n` ``; `handleEvents(snapshot, hub, res): void`, where
+`snapshot` is the provider **function**, invoked inside `handleEvents` per connection.
 
 ```ts
 // src/server/http-server.test.ts — additions (file-local)
@@ -188,12 +255,12 @@ async function openSse(baseUrl: string, pathname?: string): Promise<SseConnectio
 `res.body` is null-checked with an explicit `throw` (no `!`), matching the file's style.
 
 ## Data flow
-`GET /api/events` → dispatch on `(method, pathname)` → `snapshot()` (injected, else
-`buildSnapshot({boardDir, projectName, now})` reading `board_dir` from disk, parse failures already
-inside `parseErrors`) → `writeHead(200, SSE_HEADERS)` → `res.write('data: ' + JSON.stringify(s) +
-'\n\n')` → `hub.subscribe(res)` → `res.on('close', unsubscribe)`. Response stays open; nothing else
-is ever written in this card. No schema, no migration, no persistence, no writes to the target repo,
-no outbound sockets (REQ-001, `docs/spec.md:13-16`).
+`GET /api/events` → dispatch on `(method, pathname)` → `snapshot()` **called now, for this
+connection** (injected, else `buildSnapshot({boardDir, projectName, now})` reading `board_dir` from
+disk, parse failures already inside `parseErrors`) → `writeHead(200, SSE_HEADERS)` → `res.write('data: '
++ JSON.stringify(s) + '\n\n')` → `hub.subscribe(res)` → `res.on('close', unsubscribe)`. Response
+stays open; nothing else is ever written in this card. No schema, no migration, no persistence, no
+writes to the target repo, no outbound sockets (REQ-001, `docs/spec.md:13-16`).
 
 ## Implementation task list
 All work is in `src/server/http-server.ts` (modify) and `src/server/http-server.test.ts` (modify).
@@ -202,77 +269,123 @@ No other file changes. Each task: write the failing test, `npx vitest run src/se
 
 1. **Connect handshake: status + SSE headers.**
    Test `GET /api/events responds 200 text/event-stream and holds the connection`: add `openSse`
-   (bounded connect, buffered `nextFrame`, `close`), the module-level `openConnections` array +
-   `afterEach` sweep, and `server.closeAllConnections()` in `withServer`'s `finally`. Fixture: the
-   existing `writeFixtureBoard({'config.md', 'CARD-001-first/card.md', 'CARD-002-second/card.md'})`,
+   (bounded connect, buffered `nextFrame`, `close`), the module-level `openConnections` and
+   `openServers` arrays + the `afterEach` sweep (connections, then `closeAllConnections()` +
+   `close()` per server), `server.closeAllConnections()` in `withServer`'s `finally`, and the
+   `openServers.push(server)` line in `withServer`. Fixture: the existing
+   `writeFixtureBoard({'config.md', 'CARD-001-first/card.md', 'CARD-002-second/card.md'})`,
    `now: FIXED`. Assert `conn.status === 200`,
    `conn.headers.get('content-type') === 'text/event-stream; charset=utf-8'`,
    `conn.headers.get('cache-control') === 'no-cache, no-transform'`; `finally` → `await conn.close()`.
    Red (404 JSON today). Implement: `SSE_HEADERS`, `formatFrame`, the dispatch branch calling
-   `snapshot()`, `writeHead`, and one `res.write(formatFrame(...))`. Verify all 5 pre-existing tests
-   still pass.
+   `snapshot()`, `writeHead`, and one `res.write(formatFrame(...))`. **Verify all six pre-existing
+   tests still pass** (they now have their idle keep-alive sockets destroyed at teardown; fresh `:0`
+   ports mean no reuse, so this must be green first time — if any reddens, stop and reconsider the
+   sweep, do not weaken the assertion).
 2. **Initial frame is the current snapshot, and the stream stays open.**
    Test `emits exactly one data: frame equal to buildSnapshot and does not end the stream`, wrapped in
-   `assertNoNonLoopbackNetwork(() => assertNoRepoWrites(boardDir, () => ...))` per ADR-0011. Assert:
+   `assertNoNonLoopbackNetwork(() => assertNoRepoWrites(boardDir, () => ...))` per ADR-0011, with
+   `{ timeout: 10_000 }` (it chains a bounded connect, a frame read and a negative read). Assert:
    `frame.startsWith('data: ')`; `frame.slice(6).includes('\n') === false`;
    `JSON.parse(frame.slice(6))` `.toEqual(buildSnapshot(options))`; independently `body.projectName
    === 'fixture-project'`, `body.cards.map(c => c.id)` contains `CARD-001` and `CARD-002`,
-   `body.config.wipLimit === 2`; then `await expect(conn.nextFrame(150)).rejects.toThrow(/timed out/)`.
+   `body.config.wipLimit === 2`; then `await expect(conn.nextFrame(300)).rejects.toThrow(/timed out/)`.
    Green after task 1's write only if the frame is correctly formatted and the response is not ended.
    Then append the edge test `a card title containing a newline does not split the frame` (fixture
    card with `title: "line one\nline two"`): still exactly one frame, and
    `JSON.parse(...).cards[0].title` contains `'\n'`. This one is green on arrival — verify it by
    mutation instead: change `formatFrame` to a single `\n` terminator and to a non-stringified
    interpolation; both must redden it.
-3. **Two concurrent connections, each with its own snapshot.**
-   Test `a second connection receives its own current snapshot while the first is still open`:
-   `const hub = createSnapshotHub()`, `withServer({...options, hub}, ...)`; open A, read frame A, open
-   B, read frame B; assert both parse `.toEqual(buildSnapshot(options))`, that they are two distinct
-   `SseConnection`s both still open (`await expect(connA.nextFrame(150)).rejects.toThrow(/timed out/)`),
-   and `expect(hub.subscriberCount).toBe(2)`; close both in `finally`. Red (no `createSnapshotHub`,
-   no `hub` option). Implement `createSnapshotHub` (with `publish` — the CARD-029 seam, no caller and
-   no assertion here, per the scope note), the `hub?: ServerOptions` field, `const hub = options.hub ??
-   createSnapshotHub()` **inside `createServer`** (once per server), and `hub.subscribe(res)` on connect.
+3. **Two concurrent connections, each with its own *freshly evaluated* snapshot.**
+   Two tests, both `{ timeout: 10_000 }`.
+   **3a — shape + registry** `a second connection receives its own snapshot while the first is still
+   open`: `const hub = createSnapshotHub()`, `withServer({...options, hub}, ...)`; open A, read frame
+   A, open B, read frame B; assert both parse `.toEqual(buildSnapshot(options))`, that A is still
+   open (`await expect(connA.nextFrame(300)).rejects.toThrow(/timed out/)`), and
+   `expect(hub.subscriberCount).toBe(2)`; close both in `finally`.
+   **3b — freshness (the AC-2(b) observable)** `each connection gets a freshly evaluated snapshot,
+   not a cached frame`: same fixture, but
+   ```
+   const base = buildSnapshot({ boardDir, projectName: 'fixture-project', now: FIXED });
+   let calls = 0;
+   const options: ServerOptions = { boardDir, projectName: 'fixture-project', now: FIXED,
+     snapshot: () => ({ ...base, projectName: `p${++calls}` }) };
+   ```
+   Open A, read frame A, then open B, read frame B (sequential awaits, so call order is
+   deterministic). Assert `JSON.parse(frameA.slice(6)).projectName === 'p1'`,
+   `JSON.parse(frameB.slice(6)).projectName === 'p2'`, `expect(calls).toBe(2)` (exactly one
+   evaluation per connection — a mutant calling twice would give A=`p1`, B=`p3`), and that the rest
+   of the payload survived (`JSON.parse(frameA.slice(6)).cards.map(c => c.id)` equals
+   `base.cards.map(c => c.id)`). A frame cached at `createServer` time gives B `p1` and
+   `calls === 1` — both assertions red.
+   Red for both (no `createSnapshotHub`, no `hub` option). Implement `createSnapshotHub` (with
+   `publish` written as `for (const sink of sinks)` — the CARD-029 seam, no caller and no assertion
+   here, per the scope note), the `hub?: ServerOptions` field, `const hub = options.hub ??
+   createSnapshotHub()` **inside `createServer`** (once per server), `hub.subscribe(res)` on connect,
+   and keep the `snapshot()` call **inside the request handler**.
 4. **Disconnect unsubscribes.**
-   Test `closing a connection removes it from the hub`: injected hub, open A and B, read both frames,
-   `expect(hub.subscriberCount).toBe(2)`; `await connA.close()`; `await expect.poll(() =>
-   hub.subscriberCount, {interval: 20, timeout: 2000}).toBe(1)`; `await connB.close()`; poll `.toBe(0)`.
-   Red (nothing ever unsubscribes). Implement `res.on('close', unsubscribe)`.
+   Test `closing a connection removes it from the hub`, `{ timeout: 10_000 }`: injected hub, open A
+   and B, read both frames, `expect(hub.subscriberCount).toBe(2)`; `await connA.close()`; `await
+   expect.poll(() => hub.subscriberCount, {interval: 20, timeout: 1000}).toBe(1)`; `await
+   connB.close()`; poll `.toBe(0)`. Red (nothing ever unsubscribes). Implement
+   `res.on('close', unsubscribe)`.
 5. **500 contract on `/api/events`.**
    Test `a throwing snapshot provider yields 500 {error:"internal error"} on /api/events`: plain
    `fetch` (the response ends, so no `openSse`), `snapshot: () => { throw new Error('boom') }`; assert
    `status === 500`, `content-type === 'application/json; charset=utf-8'`, body text
-   `not.toContain('boom')`, parsed `.toEqual({error: 'internal error'})`. Red (uncaught throw). Implement
-   the try/catch around the events branch with `snapshot()` evaluated **before** `writeHead`.
-6. **Docs + gate sweep.** JSDoc on `createServer` (both routes), `createSnapshotHub`, `SnapshotHub`
-   (including the explicit "CARD-029 seam, intentionally uncalled here" note on `publish`). Run
-   `npm run lint`, `npm run typecheck`, `npm run build`, `npm test`, `npm run test:coverage`; paste
-   real output. Commit.
+   `not.toContain('boom')`, parsed `.toEqual({error: 'internal error'})`. Red (uncaught throw).
+   Implement the try/catch **scoped to the events branch**, with `snapshot()` evaluated *before*
+   `writeHead` — see the CARD-008 bullet in Dependencies.
+6. **Mutation probes, the `requestTimeout` probe, docs + gate sweep.**
+   - Run the two `formatFrame` mutations from task 2 and confirm both redden.
+   - Run the `add res.end()` after the initial frame mutation and confirm task 2's rejection message
+     flips from `/timed out/` to `/stream ended/` (proves the 300 ms negative read is a real
+     assertion, not a coincidence). Revert.
+   - Run the AC-2(b) mutation: hoist `const frame = formatFrame(snapshot())` into `createServer` and
+     write that cached frame on connect. Confirm 3b reddens (B carries `p1`, `calls === 1`) and note
+     that 3a stays green — that asymmetry is the finding this design was reworked for. Revert.
+   - **`requestTimeout` probe (temporary, not committed):** in a scratch copy of task 2's test, set
+     `server.requestTimeout = 200` before `listen`, hold the connection 400 ms, then assert
+     `nextFrame(300)` still rejects `/timed out/` and not `/stream ended/`. Delete the probe; record
+     the observed outcome verbatim in the implementation doc / PR body. If the stream *is*
+     truncated, the assumption in Dependencies is false — raise a KNOWLEDGE entry and flag CARD-029
+     and CARD-012; do not silently add a `requestTimeout = 0` line here.
+   - JSDoc on `createServer` (both routes), `createSnapshotHub`, `SnapshotHub` (including the
+     explicit "CARD-029 seam, intentionally uncalled here" note on `publish` and the "per connection,
+     never cached" note on the events branch).
+   - Run `npm run lint`, `npm run typecheck`, `npm run build`, `npm test`, `npm run test:coverage`;
+     paste real output. Commit.
 
 ## Test strategy
 - **Gates:** `eslint .`, `tsc -b --noEmit` ([CARD-001] — never plain `tsc --noEmit`), `npm run build`,
   `vitest run`, and `vitest run --coverage` ≥90% lines/functions/branches/statements over
-  `src/server/**/*.ts` minus `index.ts` and `**/*.test.ts`.
+  `src/server/**/*.ts` minus `index.ts` and `**/*.test.ts` (global thresholds, no `perFile`).
 - **Coverage of the new code:** `formatFrame`, `SSE_HEADERS`, the dispatch branch, `subscribe`, the
   returned unsubscribe, the `subscriberCount` getter and the 500 catch are all exercised by tasks 1–5.
-  The `options.hub ?? createSnapshotHub()` `??` gets both arms: tasks 1–2 and the five pre-existing
+  The `options.hub ?? createSnapshotHub()` `??` gets both arms: tasks 1–2 and the six pre-existing
   tests omit `hub`; tasks 3–4 inject one. **`publish` is the sole intentionally-uncovered function**
-  (see Dependencies & assumptions for the arithmetic) — CARD-029 covers it.
+  — true only because it is a `for…of` statement with no callback (see Interfaces); the arithmetic
+  (~42 functions, one uncovered ≈ 97.6%) is in Dependencies & assumptions. CARD-029 covers it.
 - **Independently computed expected values:** the frame payload is deep-equaled against a *direct*
   `buildSnapshot(options)` call (same fixed `now`) AND cross-checked against fixture-derived literals
   (`'fixture-project'`, `['CARD-001','CARD-002']`, `wipLimit === 2`) that never pass through the
-  server, so a hardcoded or empty payload fails. Header and framing strings are asserted as literals,
-  never rebuilt from the implementation's constants.
+  server, so a hardcoded or empty payload fails. Freshness is checked against values the test itself
+  generates and increments (`p1`, `p2`, `calls === 2`) — nothing restates the implementation's own
+  expression. Header and framing strings are asserted as literals, never rebuilt from the
+  implementation's constants.
 - **Design-named contract details asserted:** `200`; `text/event-stream; charset=utf-8`;
   `no-cache, no-transform`; the literal `data: ` prefix; exactly one `\n\n` terminator; no raw newline
   inside the data line; `500` + `{"error":"internal error"}` + no `'boom'` leak;
-  `subscriberCount` 2 → 1 → 0.
+  `subscriberCount` 2 → 1 → 0; provider call count `2`.
 - **Negative / edge cases:** stream must NOT end after the first frame (distinguishable timeout vs
-  stream-ended errors); a card title containing a newline must not split the frame; a throwing
-  provider must not produce a half-written SSE response; two connections must be independent.
+  stream-ended errors, 300 ms window); a card title containing a newline must not split the frame; a
+  throwing provider must not produce a half-written SSE response; two connections must be
+  independent; the second connection must see a *newly evaluated* snapshot, not a replay.
 - **Determinism:** fixed `now`, `:0` ephemeral ports, loopback only, no chokidar/timers under test,
-  no network. Every wait is bounded ≤2 000 ms (< vitest's 5 000 ms default) and every server, socket
-  and temp dir is released in a `finally` plus an `afterEach` sweep.
+  no network. Every individual wait is bounded ≤2 000 ms, and because per-wait budgets do not
+  compose, every multi-wait test carries `{ timeout: 10_000 }`; polls are 1 000 ms. Every server,
+  socket and temp dir is released in a `finally` **plus** an `afterEach` sweep, which is what runs
+  when vitest abandons a timed-out test's chain.
 - **No property test earns its keep here:** the only invariant is frame integrity over snapshot
   content, and `formatFrame` is module-private; a fast-check run over the real-filesystem board walk
   would be slow and non-deterministic. The newline-title fixture covers the one real hazard directly.
@@ -285,12 +398,14 @@ No other file changes. Each task: write the failing test, `npx vitest run src/se
   | `formatFrame` drops `JSON.stringify` (`data: ${snapshot}`) | task 2 (`JSON.parse` fails / newline test) |
   | `content-type` → `application/json; charset=utf-8` | task 1 header assertion |
   | drop `cache-control` | task 1 header assertion |
-  | add `res.end()` after the initial frame | task 2 (`rejects.toThrow(/stream ended/)` ≠ `/timed out/`) and task 4 (count drops early) |
-  | move `const hub = ...` inside the request handler (per-request hub) | task 3 (`subscriberCount === 1`, not 2) |
-  | delete `hub.subscribe(res)` | task 3 (`subscriberCount === 0`) |
+  | add `res.end()` after the initial frame | task 2 (`rejects.toThrow(/stream ended/)` ≠ `/timed out/`) and task 4 (count drops early); run for real in task 6 |
+  | **evaluate `snapshot()` once at `createServer` time and reuse the frame for every connection** | **task 3b (B's frame carries `p1`, expected `p2`; `calls === 1`, expected `2`) — task 3a stays green, which is exactly why 3b exists** |
+  | call `snapshot()` twice per connection | task 3b (`calls === 4` after two connections; B carries `p3`) |
+  | move `const hub = ...` inside the request handler (per-request hub) | task 3a (`subscriberCount === 1`, not 2) |
+  | delete `hub.subscribe(res)` | task 3a (`subscriberCount === 0`) |
   | delete `res.on('close', unsubscribe)` | task 4 (poll never reaches 1/0) |
   | `options.hub ?? createSnapshotHub()` → always `createSnapshotHub()` | tasks 3 and 4 (injected hub stays at 0) |
-  | delete the events try/catch | task 5 (process-level throw / no 500) |
+  | delete the events try/catch (or widen it to a handler-wide catch that runs after `writeHead`) | task 5 (process-level throw / no 500 / ERR_HTTP_HEADERS_SENT) |
   | move `snapshot()` after `writeHead` | task 5 (ERR_HTTP_HEADERS_SENT instead of a clean 500) |
   | remove `server.closeAllConnections()` from `withServer` | the file's teardown hangs — every SSE test times out at file close |
 
@@ -309,6 +424,9 @@ No other file changes. Each task: write the failing test, `npx vitest run src/se
   JSON error contract. ADR-0011 (`docs/adrs/0011-*`) — shared REQ-001 server guard.
 - Card boundary: `docs/cards/CARD-007-sse-live-snapshots/slice.md:33-41,75-81` and
   `slice-check.md:40,45-49` (the `writeFixtureBoard`/`withServer` non-export finding).
+- Existing code this design extends: `src/server/http-server.ts:18-33` (dispatch + 500 contract),
+  `src/server/http-server.test.ts:25-50` (the `tmpDirs` sweep and `withServer`), and its six tests
+  at lines 75, 108, 131, 144, 159, 189.
 
 ## Open questions
 None.
@@ -319,32 +437,38 @@ None.
 **Context:** REQ-017 requires `GET /api/events` to stream the full snapshot on connect and on every
 change. Four cards build on the shape chosen here — CARD-028 (watcher), CARD-029 (wires the watcher
 into the hub), CARD-030 (debounce) and CARD-012 (the browser `EventSource` client). The wire format,
-the hub's ownership model and whether the stream carries event names or ids are cross-card contracts
-that are expensive to change once a producer and a consumer both depend on them. ADR-0010 already
-fixed `createServer(options): Server` (unlistened) and an injectable `snapshot?: () => BoardSnapshot`;
-this decision extends that server rather than replacing it.
+the hub's ownership model, when the snapshot is evaluated, and whether the stream carries event names
+or ids are cross-card contracts that are expensive to change once a producer and a consumer both
+depend on them. ADR-0010 already fixed `createServer(options): Server` (unlistened) and an injectable
+`snapshot?: () => BoardSnapshot`; this decision extends that server rather than replacing it.
 **Decision:** Each connection is written as `data: ${JSON.stringify(snapshot)}\n\n` — the default SSE
 message type: no `event:` name (the client uses `EventSource.onmessage`), no `id:` and no
 Last-Event-ID replay, no per-client diffing or granular patch events. Response headers are exactly
 `content-type: text/event-stream; charset=utf-8` and `cache-control: no-cache, no-transform`;
 hop-by-hop `Connection` is left to Node and no `x-accel-buffering` is set (local-only deployment, no
-proxy). Connections are held in a per-server `SnapshotHub`: `subscribe(sink: FrameSink): () => void`,
-`publish(snapshot: BoardSnapshot): void` (serializes one frame, writes it to every sink),
-`readonly subscriberCount: number`. `FrameSink` is the narrowest structural type —
+proxy). **The snapshot provider is invoked per connection, inside the request handler, at connect
+time — never hoisted to `createServer` and never cached into a replayable frame**, so a client
+connecting mid-session sees the board as of its own connect rather than as of server start.
+Connections are held in a per-server `SnapshotHub`: `subscribe(sink: FrameSink): () => void`,
+`publish(snapshot: BoardSnapshot): void` (serializes one frame, writes it to every sink with a
+`for…of` loop), `readonly subscriberCount: number`. `FrameSink` is the narrowest structural type —
 `{ write(chunk: string): unknown }` — which `http.ServerResponse` satisfies, so the hub is
 unit-testable with a plain object. The hub is injectable as `ServerOptions.hub`, defaulting to one
 `createSnapshotHub()` per `createServer` call, so the CLI entry can hold a reference and publish into
 it. On connect: `snapshot()` → `writeHead(200, SSE_HEADERS)` → write the initial frame →
-`hub.subscribe(res)` → `res.on('close', unsubscribe)`. `snapshot()` runs before `writeHead` so a
-throwing provider still yields ADR-0010's `500 {"error":"internal error"}` instead of an
-ERR_HTTP_HEADERS_SENT crash.
+`hub.subscribe(res)` → `res.on('close', unsubscribe)`. `snapshot()` runs before `writeHead`, inside a
+`try/catch` **scoped to this branch**, so a throwing provider still yields ADR-0010's
+`500 {"error":"internal error"}` instead of an ERR_HTTP_HEADERS_SENT crash; any later refactor that
+widens error handling to a handler-wide catch must preserve that scoping.
 **Consequences:** The client can never drift from disk (REQ-008's full-snapshot rationale) and
 reconnect needs no replay machinery: the snapshot current at connect time is authoritative, which is
-exactly what REQ-034's auto-reconnect relies on. CARD-029 needs only `hub.publish(snapshot)`;
-CARD-030 only debounces upstream of it. `publish` therefore ships in CARD-027 with no caller and no
-assertion — a deliberate, slice-sanctioned seam, not dead code; it is one ~4-line function and does
-not endanger the 90% coverage target. Trade-off: adding an `event:` name or Last-Event-ID resume
-later is a breaking change to both server and UI, accepted because full snapshots make resume
-meaningless. `subscriberCount` is public API purely so connection lifecycle is observable in tests;
-without it the unsubscribe line is a surviving mutant that becomes writes to dead sockets once
-CARD-029 lands. Extends ADR-0010; supersedes nothing.
+exactly what REQ-034's auto-reconnect relies on — and that guarantee is only real because evaluation
+is per connection, which is why it is stated as a decision and pinned by a call-varying-provider test
+rather than left to the implementer. CARD-029 needs only `hub.publish(snapshot)`; CARD-030 only
+debounces upstream of it. `publish` therefore ships in CARD-027 with no caller and no assertion — a
+deliberate, slice-sanctioned seam, not dead code; it is one ~4-line function and does not endanger
+the 90% coverage target. Trade-off: adding an `event:` name or Last-Event-ID resume later is a
+breaking change to both server and UI, accepted because full snapshots make resume meaningless.
+`subscriberCount` is public API purely so connection lifecycle is observable in tests; without it the
+unsubscribe line is a surviving mutant that becomes writes to dead sockets once CARD-029 lands.
+Extends ADR-0010; supersedes nothing.
