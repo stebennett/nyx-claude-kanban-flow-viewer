@@ -4,8 +4,8 @@ type: feature
 layer: api
 reqs: [REQ-006, REQ-008, REQ-017]
 title: Push live snapshots over SSE
-status: backlog
-phase: backlog
+status: slice
+phase: slice
 right_sized: ""
 depends_on: [CARD-006]
 branch: ""
@@ -23,7 +23,7 @@ reworks:
 review_lenses_failed: []
 estimated_lines: 307
 actual_lines: ""
-started: ""
+started: 2026-07-21
 delivered: ""
 created: 2026-07-17
 ---

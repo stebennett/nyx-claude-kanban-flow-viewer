@@ -4,9 +4,8 @@ type: feature
 layer: api
 reqs: [REQ-001, REQ-006, REQ-010, REQ-016]
 title: Serve the parsed board over HTTP
-status: blocked
-phase: deliver
-blocker: "check failed — DLV-BODY-TRUE (self-fix did not clear it)"
+status: done
+phase: done
 right_sized: true
 depends_on: [CARD-022]
 branch: feature/006-serve-board-over-http
@@ -23,9 +22,9 @@ reworks:
   deliver: 0
 review_lenses_failed: []
 estimated_lines: 313
-actual_lines: 387
+actual_lines: 679
 started: 2026-07-20
-delivered: ""
+delivered: 2026-07-21
 created: 2026-07-17
 ---
 
@@ -58,6 +57,17 @@ where it is actually claimed.
 
 `reqs` carries REQ-006 by residence (the "CLI entry" and "small Node HTTP server" it
 enumerates); no AC cites it, which is correct for a structural REQ.
+
+`actual_lines: 679` is the whole card's branch total across both slices (slice 1 = 387,
+slice 2 = 292), matching `split.md`'s pre-split measurement. Against `estimated_lines: 313`
+that is a 2.2x under-estimate at slice time — the reason the split fired at all, and the
+single most useful retro signal from this card.
+
+driver-directed 2026-07-21 · DLV-BODY-TRUE · the driver merged PR #59 and directed the body
+prose be corrected, which lifted the park. The corrected text asserts only grep-verified
+facts: all six tests serve a disposable `writeFixtureBoard()` dir; five run the default
+`buildSnapshot` path and only the 500 test injects a throwing provider; the malformed-card
+test is the one guard-wrapped. Applied to `pr-body.md` and the merged PR #59 body.
 
 self-fix 2026-07-21 · DLV-BODY-TRUE · implementation slice 2/2 — the PR #59 body claimed
 (twice) that "every server-level test body runs inside assertNoRepoWrites +
