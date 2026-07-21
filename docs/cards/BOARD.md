@@ -3,7 +3,7 @@
 _Rendered by `/kanban`. Do not hand-edit below the header._
 
 **WIP / Gates:** wip_limit 3 · slice=auto · design=pr · deliver=auto
-_last rendered: 2026-07-21_
+_last rendered: 2026-07-21 · all 3 in-flight cards awaiting human merge (PRs #61 #62 #63); board state in PR #60_
 
 ## Backlog
 - CARD-024 — CLI startup validation for a missing or non-board directory · backlog [M2]
@@ -27,7 +27,7 @@ _last rendered: 2026-07-21_
 ## Design
 - CARD-023 — CLI --board-dir flag · design · feature/023-cli-board-dir-flag-design [M2] · design PR #61 open (deliver-check pass, CI green) — awaiting merge · ADR-0012
 - CARD-008 — Serve a card's phase docs · design · feature/008-serve-phase-docs-design [M2] · design PR #62 open (deliver-check pass, CI green) — awaiting merge · ADR-0013
-- CARD-027 — SSE endpoint sends the current snapshot on connect · design · feature/027-sse-snapshot-on-connect-design [M2] · design PR #63 open · ADR-0014 · checking deliver
+- CARD-027 — SSE endpoint sends the current snapshot on connect · design · feature/027-sse-snapshot-on-connect-design [M2] · design PR #63 open (deliver-check pass, CI green) — awaiting merge · ADR-0014
 
 ## Implement
 
