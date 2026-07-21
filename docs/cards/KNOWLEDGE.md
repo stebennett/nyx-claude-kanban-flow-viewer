@@ -445,3 +445,21 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   re-declaring; vitest's `test.include` is `test/**/*.test.ts`, so the non-`.test.ts` helper is never
   collected as a suite. **Cross-card:** KNOWLEDGE [CARD-027]'s `closeAllConnections()` fix must land IN
   this shared `withServer`, not in a private copy — every server-level suite now shares it.
+- [CARD-027] Node's `server.requestTimeout` does **not** truncate an in-flight SSE response — probed
+  empirically on Node v22.15.0: default is 300000, and with `server.requestTimeout = 200` set before
+  `listen` and the connection held 400 ms, the next bounded read still timed out rather than seeing EOF.
+  It bounds request **receipt** only, so a long-lived production stream needs no `requestTimeout = 0`.
+  Probing it requires inlining `createServer` + `listen`: `withServer` constructs the server internally
+  and never exposes it.
+- [CARD-027] In vitest 3, per-test options go in the **second** argument — `it(name, { timeout: 10_000 },
+  fn)`. The third-argument object form still works but prints "Using an object as a third argument is
+  deprecated. Vitest 4 will throw an error" to stderr on every collect.
+- [CARD-027] `ReadableStreamReadResult<T>` is a DOM lib type and is **not** declared by `@types/node`.
+  Under this repo's `tsconfig.test.json` (`lib: [ES2023]`, `types: [node]`) any test holding a web-stream
+  read promise must derive the type instead — `let pending: ReturnType<typeof reader.read> | null` — or
+  `tsc -b --noEmit` fails with TS2304 while vitest stays green.
+- [CARD-027] When mutation-proving "the value is computed per request, not cached", prefer a **lazy**
+  cache mutant (cache on first request) over an **eager** one (hoist the computation into the factory):
+  the eager form also reddens any test whose injected provider throws, because it now throws at
+  construction rather than per request, which obscures the claim. The lazy form isolates it — exactly one
+  test reddens, the freshness test, while its static-deep-equal twin stays green.
