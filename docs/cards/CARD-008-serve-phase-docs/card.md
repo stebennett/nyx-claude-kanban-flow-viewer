@@ -4,12 +4,12 @@ type: feature
 layer: api
 reqs: [REQ-005, REQ-018, REQ-035]
 title: Serve a card's phase docs
-status: slice
-phase: slice
-right_sized: ""
+status: design
+phase: design
+right_sized: true
 depends_on: [CARD-006]
-branch: ""
-worktree: ""
+branch: feature/008-serve-phase-docs-design
+worktree: .worktrees/CARD-008-serve-phase-docs
 design_pr_url: ""
 pr_urls: []
 split_slices: 0
