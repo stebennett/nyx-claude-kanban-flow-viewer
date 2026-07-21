@@ -3,7 +3,7 @@
 _Rendered by `/kanban`. Do not hand-edit below the header._
 
 **WIP / Gates:** wip_limit 3 · slice=auto · design=pr · deliver=auto
-_last rendered: 2026-07-20_
+_last rendered: 2026-07-21_
 
 ## Backlog
 - CARD-007 — Push live snapshots over SSE · backlog [M2]
@@ -30,7 +30,7 @@ _last rendered: 2026-07-20_
 ## Review
 
 ## Deliver
-- CARD-006 — Serve the parsed board over HTTP · deliver · feature/006-serve-board-over-http [M2] · split: 2 slices · PR 1/2 #58 open (guard) — deliver-check ✓, awaiting human merge (then slice 2/2)
+- CARD-006 — Serve the parsed board over HTTP · deliver · feature/006-serve-board-over-http [M2] · split: 2 slices · PR 1/2 #58 merged (guard) — PR 2/2 #59 open (HTTP server + CLI) · checking deliver
 
 ## Blocked
 
