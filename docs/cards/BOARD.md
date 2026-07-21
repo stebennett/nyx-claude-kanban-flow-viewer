@@ -6,7 +6,6 @@ _Rendered by `/kanban`. Do not hand-edit below the header._
 _last rendered: 2026-07-21_
 
 ## Backlog
-- CARD-023 — CLI --board-dir flag · backlog [M2]
 - CARD-024 — CLI startup validation for a missing or non-board directory · backlog [M2]
 - CARD-025 — CLI --port flag with default and auto-increment · backlog [M2]
 - CARD-026 — CLI --no-open flag and default browser launch · backlog [M2]
@@ -21,10 +20,11 @@ _last rendered: 2026-07-21_
 - CARD-017 — Unparseable tray · backlog [M3]
 
 ## Slice
-- CARD-007 — Push live snapshots over SSE · slice [M2] · checking slice
+- CARD-007 — Push live snapshots over SSE · slice [M2] · slice-check failed SLC-SIZE (child 2 margin too thin) — re-slicing, reworks.slice 1/2
 - CARD-008 — Serve a card's phase docs · slice [M2] · slice-check failed SLC-VERDICT (split not necessary) — re-slicing for keep-as-one, reworks.slice 1/2
 
 ## Design
+- CARD-023 — CLI --board-dir flag · design · feature/023-cli-board-dir-flag-design [M2]
 
 ## Implement
 

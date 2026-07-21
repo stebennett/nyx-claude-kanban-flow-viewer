@@ -4,12 +4,12 @@ type: feature
 layer: api
 reqs: [REQ-012]
 title: CLI --board-dir flag
-status: backlog
-phase: backlog
+status: design
+phase: design
 right_sized: true
 depends_on: [CARD-006]
-branch: ""
-worktree: ""
+branch: feature/023-cli-board-dir-flag-design
+worktree: .worktrees/CARD-023-cli-board-dir-flag
 design_pr_url: ""
 pr_urls: []
 split_slices: 0
@@ -23,7 +23,7 @@ reworks:
 review_lenses_failed: []
 estimated_lines: 130
 actual_lines: ""
-started: ""
+started: 2026-07-21
 delivered: ""
 created: 2026-07-21
 ---
