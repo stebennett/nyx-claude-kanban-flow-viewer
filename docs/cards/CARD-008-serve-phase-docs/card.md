@@ -4,26 +4,26 @@ type: feature
 layer: api
 reqs: [REQ-005, REQ-018, REQ-035]
 title: Serve a card's phase docs
-status: backlog
-phase: backlog
-right_sized: ""
+status: design
+phase: design
+right_sized: true
 depends_on: [CARD-006]
-branch: ""
-worktree: ""
-design_pr_url: ""
+branch: feature/008-serve-phase-docs-design
+worktree: .worktrees/CARD-008-serve-phase-docs
+design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/62
 pr_urls: []
 split_slices: 0
-adrs: []
+adrs: [ADR-0013]
 reworks:
-  slice: 0
-  design: 0
+  slice: 1
+  design: 1
   implement: 0
   split: 0
   deliver: 0
 review_lenses_failed: []
-estimated_lines: 230
+estimated_lines: 460
 actual_lines: ""
-started: ""
+started: 2026-07-21
 delivered: ""
 created: 2026-07-17
 ---

@@ -4,27 +4,27 @@ type: feature
 layer: api
 reqs: [REQ-001, REQ-006, REQ-010, REQ-016]
 title: Serve the parsed board over HTTP
-status: deliver
-phase: deliver
+status: done
+phase: done
 right_sized: true
 depends_on: [CARD-022]
 branch: feature/006-serve-board-over-http
 worktree: .worktrees/CARD-006-serve-board-over-http-impl
 design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/56
-pr_urls: [https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/58]
+pr_urls: [https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/58, https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/59]
 split_slices: 2
 adrs: [ADR-0010, ADR-0011]
 reworks:
   slice: 0
   design: 0
-  implement: 1
+  implement: 0
   split: 0
   deliver: 0
-review_lenses_failed: [functionality, tests]
+review_lenses_failed: []
 estimated_lines: 313
-actual_lines: 387
+actual_lines: 679
 started: 2026-07-20
-delivered: ""
+delivered: 2026-07-21
 created: 2026-07-17
 ---
 
@@ -57,6 +57,23 @@ where it is actually claimed.
 
 `reqs` carries REQ-006 by residence (the "CLI entry" and "small Node HTTP server" it
 enumerates); no AC cites it, which is correct for a structural REQ.
+
+`actual_lines: 679` is the whole card's branch total across both slices (slice 1 = 387,
+slice 2 = 292), matching `split.md`'s pre-split measurement. Against `estimated_lines: 313`
+that is a 2.2x under-estimate at slice time — the reason the split fired at all, and the
+single most useful retro signal from this card.
+
+driver-directed 2026-07-21 · DLV-BODY-TRUE · the driver merged PR #59 and directed the body
+prose be corrected, which lifted the park. The corrected text asserts only grep-verified
+facts: all six tests serve a disposable `writeFixtureBoard()` dir; five run the default
+`buildSnapshot` path and only the 500 test injects a throwing provider; the malformed-card
+test is the one guard-wrapped. Applied to `pr-body.md` and the merged PR #59 body.
+
+self-fix 2026-07-21 · DLV-BODY-TRUE · implementation slice 2/2 — the PR #59 body claimed
+(twice) that "every server-level test body runs inside assertNoRepoWrites +
+assertNoNonLoopbackNetwork". Only the malformed-card test (L189) is guard-wrapped; the
+other five inject a snapshot provider and call withServer unwrapped. Corrected the claim on
+the branch + live PR #59 to state the real scope and why it is the right one.
 
 self-fix 2026-07-20 · DLV-BODY-TRUE · design — corrected the PR-body size attribution
 (was "~370 changed lines, design-check re-derived" — design-check has no size criterion;

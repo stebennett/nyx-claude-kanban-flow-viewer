@@ -9,3 +9,4 @@ CARD-002 | delivered 2026-07-18 | reworks {slice:0,design:0,implement:0,split:0,
 CARD-003 | delivered 2026-07-20 | reworks {slice:0,design:0,implement:2,split:0,deliver:0} | elapsed 2d | est/actual lines 110/269 | slices 1 | human-comments 1
 CARD-021 | delivered 2026-07-20 | reworks {slice:0,design:0,implement:1,split:1,deliver:0} | elapsed 2d | est/actual lines 340/507 | slices 2 | human-comments 0
 CARD-022 | delivered 2026-07-20 | reworks {slice:0,design:0,implement:1,split:0,deliver:0} | elapsed 0d | est/actual lines 280/325 | slices 1 | human-comments 0
+CARD-006 | delivered 2026-07-21 | reworks {slice:0,design:0,implement:1,split:0,deliver:0} | elapsed 1d | est/actual lines 313/679 | slices 2 | human-comments 0

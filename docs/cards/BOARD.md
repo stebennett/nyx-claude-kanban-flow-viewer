@@ -3,11 +3,15 @@
 _Rendered by `/kanban`. Do not hand-edit below the header._
 
 **WIP / Gates:** wip_limit 3 · slice=auto · design=pr · deliver=auto
-_last rendered: 2026-07-20_
+_last rendered: 2026-07-21 · all 3 in-flight cards awaiting human merge (PRs #61 #62 #63); board state in PR #60_
 
 ## Backlog
-- CARD-007 — Push live snapshots over SSE · backlog [M2]
-- CARD-008 — Serve a card's phase docs · backlog [M2]
+- CARD-024 — CLI startup validation for a missing or non-board directory · backlog [M2]
+- CARD-025 — CLI --port flag with default and auto-increment · backlog [M2]
+- CARD-026 — CLI --no-open flag and default browser launch · backlog [M2]
+- CARD-028 — Watch the board directory for changes and produce a fresh snapshot · backlog [M2]
+- CARD-029 — Push watcher snapshots to connected SSE clients on a board change · backlog [M2]
+- CARD-030 — Debounce rapid board changes into one live snapshot · backlog [M2]
 - CARD-009 — Serve the SPA and render eight flow columns · backlog [M3]
 - CARD-010 — Card anatomy · backlog [M3]
 - CARD-011 — Blocked flag, terminal drawer, and overflow column · backlog [M3]
@@ -17,11 +21,13 @@ _last rendered: 2026-07-20_
 - CARD-015 — Milestones strip · backlog [M4]
 - CARD-016 — Card detail panel · backlog [M4]
 - CARD-017 — Unparseable tray · backlog [M3]
-- CARD-018 — CLI flags and startup validation · backlog [M2]
 
 ## Slice
 
 ## Design
+- CARD-023 — CLI --board-dir flag · design · feature/023-cli-board-dir-flag-design [M2] · design PR #61 open (deliver-check pass, CI green) — awaiting merge · ADR-0012
+- CARD-008 — Serve a card's phase docs · design · feature/008-serve-phase-docs-design [M2] · design PR #62 open (deliver-check pass, CI green) — awaiting merge · ADR-0013
+- CARD-027 — SSE endpoint sends the current snapshot on connect · design · feature/027-sse-snapshot-on-connect-design [M2] · design PR #63 open (deliver-check pass, CI green) — awaiting merge · ADR-0014
 
 ## Implement
 
@@ -30,7 +36,6 @@ _last rendered: 2026-07-20_
 ## Review
 
 ## Deliver
-- CARD-006 — Serve the parsed board over HTTP · deliver · feature/006-serve-board-over-http [M2] · split: 2 slices · PR 1/2 #58 open (guard) — deliver-check ✓, awaiting human merge (then slice 2/2)
 
 ## Blocked
 
@@ -42,15 +47,18 @@ _last rendered: 2026-07-20_
 - CARD-020 — Record phase-doc presence in the card model · delivered 2026-07-18 · PRs #20 (design) + #24 · 185 lines · 0 reworks [M2]
 - CARD-021 — Assemble a board snapshot from cards, config and parse errors · delivered 2026-07-20 · PRs #29 (design) + #45 + #49 (2 slices) · 507 lines · 1 implement + 1 split rework [M2]
 - CARD-022 — Add milestone progress to the board snapshot · delivered 2026-07-20 · PRs #52 (design) + #54 · 325 lines · 1 implement rework (CRLF) [M2]
+- CARD-006 — Serve the parsed board over HTTP · delivered 2026-07-21 · PRs #56 (design) + #58 + #59 (2 slices) · 679 lines · 1 implement rework · 2 DLV-BODY-TRUE body defects (1 self-fixed, 1 driver-directed) [M2]
 
 ## Split
 - CARD-004 — Parse a card.md into the card model → split into CARD-019, CARD-020 [M2]
 - CARD-005 — Build a board snapshot from the board directory → split into CARD-021, CARD-022 [M2]
+- CARD-018 — CLI flags and startup validation → split into CARD-023, CARD-024, CARD-025, CARD-026 [M2]
+- CARD-007 — Push live snapshots over SSE → split into CARD-027, CARD-028, CARD-029, CARD-030 [M2]
 
 ## Superseded
 
 ## Milestones
 - M1 — Toolchain and delivery pipeline · 3/3 · complete
-- M2 — Headless board API · 4/8 · in progress
+- M2 — Headless board API · 5/14 · in progress
 - M3 — Live board UI · 0/6 · not started
 - M4 — Detail, milestones and activity · 0/3 · not started
