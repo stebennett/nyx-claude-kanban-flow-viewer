@@ -4,11 +4,11 @@ type: feature
 layer: api
 reqs: [REQ-017]
 title: SSE endpoint sends the current snapshot on connect
-status: design
-phase: design
+status: implement
+phase: split
 right_sized: true
 depends_on: [CARD-006]
-branch: feature/027-sse-snapshot-on-connect-design
+branch: feature/027-sse-snapshot-on-connect
 worktree: .worktrees/CARD-027-sse-snapshot-on-connect
 design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/63
 pr_urls: []
@@ -17,7 +17,7 @@ adrs: [ADR-0014]
 reworks:
   slice: 0
   design: 1
-  implement: 0
+  implement: 1
   split: 0
   deliver: 0
 review_lenses_failed: []

@@ -426,3 +426,132 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   same clean 500 and the test stays green. Only a throw *after* `writeHead` exposes
   ERR_HTTP_HEADERS_SENT, and nothing in an SSE branch throws synchronously there — so the real defence
   is the merge-order instruction plus the ADR clause. State it that way rather than claiming test cover.
+- [CARD-023] A CLI token walk keeps 100% branch coverage under `noUncheckedIndexedAccess` by iterating
+  **values** (`for (const token of argv)`) and carrying a pending flag in a local
+  (`awaitingValueFor: string | undefined`), rather than looking ahead at `argv[i+1]` — the look-ahead
+  form forces a `?? ''` guard that is an unreachable branch charged against the 90% threshold (the
+  [CARD-019]/[CARD-006] trap). The pending-flag local also carries the flag name into its error message,
+  so `--board-dir requires a value` stays one template as CARD-025/026 add flags.
+- [CARD-023] In an end-to-end test whose point is *which* board gets served, do NOT pre-assert the
+  resolved path (`expect(boardDirPath).toBe(join(repo,'boards/alt'))`) before starting the server: the
+  pre-assert fails FIRST under the very mutation the test exists to catch, so the red evidence reads as a
+  path mismatch instead of the designed `expected [ 'CARD-001' ] to deeply equal [ 'CARD-777' ]`.
+  Observed here. Path shape belongs in the `resolvePaths` units (hand-written literals); the e2e should
+  assert only served content.
+- [CARD-023] The shared server-test harness now lives in `test/board-fixture.ts` —
+  `writeFixtureTree(files, prefix)`, `cleanupFixtures()` (owns the module-level tmp-dir list, call from
+  `afterEach`) and `withServer(options, cb)` (ephemeral `:0` port, closed in `finally`) — moved out of
+  `http-server.test.ts`. Any card needing a real server on a temp board imports it rather than
+  re-declaring; vitest's `test.include` is `test/**/*.test.ts`, so the non-`.test.ts` helper is never
+  collected as a suite. **Cross-card:** KNOWLEDGE [CARD-027]'s `closeAllConnections()` fix must land IN
+  this shared `withServer`, not in a private copy — every server-level suite now shares it.
+- [CARD-027] Node's `server.requestTimeout` does **not** truncate an in-flight SSE response — probed
+  empirically on Node v22.15.0: default is 300000, and with `server.requestTimeout = 200` set before
+  `listen` and the connection held 400 ms, the next bounded read still timed out rather than seeing EOF.
+  It bounds request **receipt** only, so a long-lived production stream needs no `requestTimeout = 0`.
+  Probing it requires inlining `createServer` + `listen`: `withServer` constructs the server internally
+  and never exposes it.
+- [CARD-027] In vitest 3, per-test options go in the **second** argument — `it(name, { timeout: 10_000 },
+  fn)`. The third-argument object form still works but prints "Using an object as a third argument is
+  deprecated. Vitest 4 will throw an error" to stderr on every collect.
+- [CARD-027] `ReadableStreamReadResult<T>` is a DOM lib type and is **not** declared by `@types/node`.
+  Under this repo's `tsconfig.test.json` (`lib: [ES2023]`, `types: [node]`) any test holding a web-stream
+  read promise must derive the type instead — `let pending: ReturnType<typeof reader.read> | null` — or
+  `tsc -b --noEmit` fails with TS2304 while vitest stays green.
+- [CARD-027] When mutation-proving "the value is computed per request, not cached", prefer a **lazy**
+  cache mutant (cache on first request) over an **eager** one (hoist the computation into the factory):
+  the eager form also reddens any test whose injected provider throws, because it now throws at
+  construction rather than per request, which obscures the claim. The lazy form isolates it — exactly one
+  test reddens, the freshness test, while its static-deep-equal twin stays green.
+- [kanban] Re-rendering `BOARD.md` on a phase transition has now produced the same defect three times in
+  one session: the card's status string is updated in place but the bullet is left under its **previous**
+  column heading (Design→Implement, Implement→Test, Test→Review). A phase transition is a **move between
+  two `##` sections**, not an edit to one line — a `sed`/`replace` keyed on the card's text will always
+  update the text and never move it. Do the transition as an explicit delete-from-old-section +
+  insert-into-new-section edit, and **read the rendered section back** before committing: the status word
+  and the heading above it must agree. Two of the three were caught only by reading the file afterwards.
+- [kanban] **Never dispatch a mutation-running reviewer into a worktree that other reviewers are reading
+  concurrently.** CARD-027's review panel ran 8 lenses in parallel against one worktree, and the
+  acceptance/tests lenses were told to run mutation probes and revert. The design lens observed the
+  worktree mid-mutation (`// MUTANT: no catch` uncommitted in `http-server.ts`) and correctly flagged
+  it. Two consequences: any lens reading working-tree files during that window can report a phantom
+  finding, and a lens that reverts is racing every other lens. Either serialise the mutation-running
+  lens, give it its own worktree, or instruct every lens to diff via git objects
+  (`git diff origin/main...<branch>`) and never trust working-tree contents. The design lens did exactly
+  that on its own initiative, which is why its verdict stands.
+- [CARD-027] Closing an SSE connection in tests: call `controller.abort()` **before** `reader.cancel()`.
+  `cancel()` alone is not a guaranteed socket teardown, and once the body stream is closed a later
+  `abort()` is a no-op — the server's `res` stays alive and its `'close'` handler never runs. Swallow the
+  pending read's rejection first (`pending?.catch(() => undefined)`); abort-first is then safe (probed:
+  200 cycles, zero unhandled AbortErrors). The comment justifying cancel-first ("the reverse order
+  surfaces an unhandled AbortError") was wrong — the `.catch()` already covers it.
+- [CARD-027] Server-side SSE unsubscribe latency on loopback is **p50 3 ms / max 9 ms** (200 close
+  cycles). If a `subscriberCount` poll ever burns its whole budget, the teardown did not happen at all —
+  widening the timeout is not the fix, and re-running to green hides a real bug.
+- [CARD-027] `ServerResponse.write()` never throws synchronously for a dead peer: writing to a
+  just-abandoned response returns `true`, writing after its `'close'` returns `false`, and neither emits
+  an uncaught error (probed, Node v22.15.0). So broadcasting to a not-yet-unsubscribed socket is safe; a
+  throwing sink can only be a non-`ServerResponse` `FrameSink`.
+- [kanban] A per-server singleton written `const x = options.x ?? makeX()` can **never** be proven
+  per-server by a test that **injects** `options.x` — injection makes correct code and the per-request
+  mutant indistinguishable, because the injected object is identical on every request. Observing the
+  singleton's *state* proves subscription, not placement. To guard placement make **resolution** the
+  observable: pass a counting accessor (`get x() { reads++; return x; }`) and assert `reads === 1` across
+  N requests. **The spread hazard is the opposite of what it looks like** (corrected on CARD-027's
+  re-review — an earlier version of this entry got it backwards): `createServer({ ...options })` invokes
+  the getter **once at construction** and hands over a plain data property, so `reads === 1` holds whether
+  the singleton is resolved per-server or per-request — the assertion goes **silently vacuous** and the
+  very mutant it exists to catch passes. A comment is not enough. Make it enforceable: declare the
+  accessor **non-enumerable** (`Object.defineProperty(options, 'x', { enumerable: false, get() {…} })`),
+  so any spread drops the property entirely and the accompanying state assertion fails loudly at 0.
+- [kanban] A mutation→break map row must predict the assertion that fires **first**, not the semantically
+  strongest one. CARD-027's double-call mutant was predicted to redden via `expect(calls).toBe(2)`; it
+  actually reddens on an earlier value assertion and `calls` is never read. Order assertions to match the
+  mutation you claim to catch, or expect the red evidence to read differently than the design predicts.
+- [kanban] A design's mutation→break map is a **claim the implementer must re-verify against the test as
+  shipped**, not as specified: a fixture choice made during implementation (e.g. injecting a dependency
+  for observability) can silently invalidate a row that was true of the designed test. Any row whose
+  named test changed shape during implementation belongs in `implement.md`'s Deviations with the re-check
+  result.
+- [kanban] **Do not write a factual claim into a durable document without running the command that
+  settles it.** CARD-023 produced three defects of one shape, all in orchestrator-authored prose, all
+  caught downstream rather than at authoring time: (1) "463 added lines against size_limit 500" framed as
+  compliance, written without reading `checks/deliver.md`'s stated `added + deleted` method; (2) "the
+  added-column measure DLV-SIZE used on CARD-019/CARD-021" — a precedent asserted, never verified; (3)
+  "both of those cards had zero deletions" — asserted about two PRs without opening either (CARD-019 has
+  5). Each was *explanatory* prose added while fixing something else, which is the tell: the claim being
+  corrected gets checked, the sentence explaining the correction does not. Cf. `[CARD-006]`, the same
+  pattern in a PR-body self-fix. The mitigation is a command, not more care.
+- [kanban] When dispatching a re-check after a self-fix, **explicitly ask whether the fix introduced a new
+  false claim**, not just whether it cleared the old one. Both times this project has asked (CARD-006,
+  CARD-023) the answer was yes. A self-fix is unreviewed prose written under time pressure by the party
+  whose error is being corrected — it is the least trustworthy text in the card, not the most.
+- [kanban] **Write markdown phase docs with the Write tool, never a bash heredoc.** A heredoc in this
+  environment silently strips every `#`-prefixed line — a doc written that way arrives with zero markdown
+  headers while every other character survives, so it looks fine in the tool result and is only caught by
+  `grep -c '^#'` on the file afterwards. Measured: two Write-tool docs had 10 and 11 headers intact; a
+  heredoc-written `test.md` had 0. Bullet-only appends (`- [CARD-NNN] …`, as this file uses) are
+  unaffected, which is why KNOWLEDGE.md survived the same treatment. If a heredoc is unavoidable, verify
+  with `grep -c '^#'` before committing.
+- [CARD-027→CARD-029] Two pieces of code ship **unreachable and therefore untested** in CARD-027, both
+  correctly deferred, neither carried on CARD-029's card: (1) `SnapshotHub.publish`'s per-sink
+  `try/catch` — nothing in CARD-027 calls `publish`, so "a dead sink must not abort the broadcast" has no
+  assertion; CARD-029, as first caller, owes the ~8-line pure test (subscribe a throwing `FrameSink` and a
+  recording one, `publish`, assert the recording one still received the frame) or must delete the guard.
+  (2) `openSse`'s `pending` read retention — a `ReadableStreamDefaultReader` **queues** read requests, so
+  an orphaned timed-out read consumes the next chunk and dropping the retention loses the first
+  post-timeout frame. It cannot be exercised in CARD-027 (no path writes a second frame); CARD-029's first
+  timeout-then-resume read is its first real exercise. **Do not "simplify" it away.**
+- [kanban] **N consecutive green runs against a flake reproduced at 1-in-K is weaker evidence than it
+  reads — do the arithmetic before calling a race fixed.** CARD-027: 126 combined green runs against a
+  1-in-45 flake leaves `(44/45)^126` ≈ 6% residual, i.e. ~94% confidence, not proof. A load-dependent race
+  also may not reproduce in an isolated probe (a 350-cycle cancel-first control never stuck), so a clean
+  differential is often unavailable. Accept such a fix on the **mechanism** — here, `controller.abort()`
+  drives undici's connection destroy, and cancel-first makes the later abort a guaranteed no-op — and
+  treat run counts as corroboration only. An `implement.md` that presents the counts as proof overstates.
+- [CARD-027] `ServerResponse.write()` never throws for a dead peer (re-probed, Node v22.15.0): live write
+  → `true`, write to a just-abandoned peer → `true`, write after the server's `'close'` → `false`; no sync
+  throw, no async `'error'`. So `publish`'s per-sink `try/catch` can never fire for a `ServerResponse` —
+  it guards only a non-`ServerResponse` `FrameSink`. **CARD-029 must not read that guard as its
+  dead-client defence**; pruning is owned by `res.on('close', unsubscribe)`, and back-pressure
+  (`write()` returning `false`) is still unhandled and scoped to CARD-029 by `design.md`.
