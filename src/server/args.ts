@@ -24,13 +24,62 @@ export interface CliArgs {
 
 export type ParsedArgs = { ok: true; args: CliArgs } | { ok: false; error: string };
 
-/** Parses the USER argv (`process.argv.slice(2)`). Total: never throws. */
+const BOARD_DIR_FLAG = '--board-dir';
+
+/**
+ * Parses the USER argv (`process.argv.slice(2)`). Total: never throws — every
+ * failure is `{ok:false, error}` with a project-owned message.
+ *
+ * One left-to-right walk over the token VALUES (`for…of`, never `argv[i]`):
+ * under `noUncheckedIndexedAccess` an indexed read is `string | undefined`, and
+ * the reflexive `?? ''` guard would be an unreachable branch charged against the
+ * 90% branch threshold (KNOWLEDGE [CARD-019], [CARD-006]). A pending flag is
+ * carried in `awaitingValueFor` instead of by look-ahead.
+ */
 export function parseArgs(argv: string[]): ParsedArgs {
-  const [targetRepo] = argv;
+  let targetRepo: string | undefined;
+  let boardDir = DEFAULT_BOARD_DIR;
+  let awaitingValueFor: string | undefined;
+
+  for (const token of argv) {
+    if (awaitingValueFor !== undefined) {
+      // A `--`-prefixed token is the next OPTION, not this flag's value.
+      if (token.startsWith('--')) {
+        return { ok: false, error: `${awaitingValueFor} requires a value` };
+      }
+      if (token === '') {
+        return { ok: false, error: `${awaitingValueFor} requires a non-empty value` };
+      }
+      boardDir = token; // repeated --board-dir: last wins
+      awaitingValueFor = undefined;
+      continue;
+    }
+
+    if (token === BOARD_DIR_FLAG) {
+      awaitingValueFor = token;
+      continue;
+    }
+
+    if (token.startsWith('--')) {
+      // Strict by design (ADR-0012): an unimplemented sibling flag fails loudly
+      // rather than being silently ignored. CARD-025/026 add their own cases.
+      return { ok: false, error: `unknown option: ${token}` };
+    }
+
+    if (targetRepo !== undefined) {
+      return { ok: false, error: `unexpected argument: ${token}` };
+    }
+
+    targetRepo = token;
+  }
+
+  if (awaitingValueFor !== undefined) {
+    return { ok: false, error: `${awaitingValueFor} requires a value` };
+  }
 
   if (targetRepo === undefined) {
     return { ok: false, error: 'missing <path-to-repo>' };
   }
 
-  return { ok: true, args: { targetRepo, boardDir: DEFAULT_BOARD_DIR } };
+  return { ok: true, args: { targetRepo, boardDir } };
 }

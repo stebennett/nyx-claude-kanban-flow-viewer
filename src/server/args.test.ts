@@ -35,3 +35,65 @@ describe('parseArgs positional and default board dir', () => {
     expect(parseArgs([])).toEqual({ ok: false, error: 'missing <path-to-repo>' });
   });
 });
+
+describe('parseArgs --board-dir', () => {
+  it('--board-dir <path> overrides the default', () => {
+    expect(parseArgs(['/tmp/repo', '--board-dir', 'boards/alt'])).toEqual({
+      ok: true,
+      args: { targetRepo: '/tmp/repo', boardDir: 'boards/alt' },
+    });
+  });
+
+  it('accepts the flag before the positional', () => {
+    expect(parseArgs(['--board-dir', 'boards/alt', '/tmp/repo'])).toEqual({
+      ok: true,
+      args: { targetRepo: '/tmp/repo', boardDir: 'boards/alt' },
+    });
+  });
+
+  it('last --board-dir wins', () => {
+    expect(parseArgs(['/tmp/repo', '--board-dir', 'a', '--board-dir', 'b'])).toEqual({
+      ok: true,
+      args: { targetRepo: '/tmp/repo', boardDir: 'b' },
+    });
+  });
+});
+
+describe('parseArgs error branches', () => {
+  it('errors when --board-dir has no value', () => {
+    expect(parseArgs(['/tmp/repo', '--board-dir'])).toEqual({
+      ok: false,
+      error: '--board-dir requires a value',
+    });
+  });
+
+  it('errors when --board-dir is followed by another option', () => {
+    // The next token must NOT be swallowed as the value.
+    expect(parseArgs(['/tmp/repo', '--board-dir', '--nope'])).toEqual({
+      ok: false,
+      error: '--board-dir requires a value',
+    });
+  });
+
+  it('errors on an empty --board-dir value', () => {
+    expect(parseArgs(['/tmp/repo', '--board-dir', ''])).toEqual({
+      ok: false,
+      error: '--board-dir requires a non-empty value',
+    });
+  });
+
+  it('errors on an unknown option', () => {
+    // --port is deliberately unimplemented today; CARD-025 flips this case.
+    expect(parseArgs(['/tmp/repo', '--port', '4400'])).toEqual({
+      ok: false,
+      error: 'unknown option: --port',
+    });
+  });
+
+  it('errors on a second positional', () => {
+    expect(parseArgs(['/tmp/a', '/tmp/b'])).toEqual({
+      ok: false,
+      error: 'unexpected argument: /tmp/b',
+    });
+  });
+});
