@@ -10,7 +10,7 @@ right_sized: true
 depends_on: [CARD-006]
 branch: feature/027-sse-snapshot-on-connect-design
 worktree: .worktrees/CARD-027-sse-snapshot-on-connect
-design_pr_url: ""
+design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/63
 pr_urls: []
 split_slices: 0
 adrs: [ADR-0014]

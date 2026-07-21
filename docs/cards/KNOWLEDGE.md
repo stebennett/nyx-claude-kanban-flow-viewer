@@ -414,3 +414,15 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   `ServerOptions` field is compiler-enforced for *presence* but never for *correctness*. A design adding
   one must name a manual smoke (`node dist/server/index.js <repo>` + `curl` the affected route) as that
   field's evidence, the way CARD-023's design task 7 does.
+- [CARD-008] When counting real occurrences of a filename pattern to verify a PR-body claim (e.g.
+  "`deliver-check-design.md` is a real filename (N instances)"), count against **`origin/main`**
+  (`git ls-tree -r --name-only origin/main -- docs/cards`), never the primary checkout's working tree —
+  the primary checkout runs the kanban bookkeeping branch, which can be ahead with another card's
+  still-unmerged PR, giving a count one higher than the PR's true base supports.
+- [CARD-027] When two in-flight cards restructure the same request handler's error handling (a
+  branch-scoped `try/catch` vs a hoist to one handler-wide catch), the card that depends on the narrow
+  scoping must not claim a guard test it doesn't have. A 500-contract test whose provider throws
+  **before** `writeHead` does NOT detect a widened catch: with headers unsent, the outer catch emits the
+  same clean 500 and the test stays green. Only a throw *after* `writeHead` exposes
+  ERR_HTTP_HEADERS_SENT, and nothing in an SSE branch throws synchronously there — so the real defence
+  is the merge-order instruction plus the ADR clause. State it that way rather than claiming test cover.
