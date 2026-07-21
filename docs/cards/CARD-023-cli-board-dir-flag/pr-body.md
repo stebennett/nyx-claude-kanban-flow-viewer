@@ -1,68 +1,73 @@
-## CARD-023 — design: CLI --board-dir flag   [feature · api]
+## CARD-023 — CLI `--board-dir` flag   [feature · api]
 
-### Why
-The CLI currently hardcodes `resolve(targetRepo, 'docs/cards')`. REQ-012 says the board location is a
-repo-relative flag defaulting to `docs/cards`. This card makes that real — and in doing so establishes
-`src/server/args.ts`, the pure CLI-parsing module that CARD-024 (validation), CARD-025 (`--port`) and
-CARD-026 (`--no-open`) each extend. It is the first of CARD-018's four children.
+Implements REQ-012. Replaces the hardcoded `resolve(targetRepo, 'docs/cards')` with a real flag, and
+establishes `src/server/args.ts` — the pure CLI-parsing module CARD-024/025/026 each extend.
 
-### Design summary
-- **`src/server/args.ts` is pure**: no fs, no `process`, no throw. `parseArgs(argv)` takes the *user*
-  argv (`process.argv.slice(2)`) and returns a discriminated `{ok:true,args} | {ok:false,error}`.
-  Unknown options and surplus positionals are rejected with project-owned messages, never ignored.
-- **The two board paths get two names on two types.** `CliArgs.boardDir` is the repo-relative flag
-  value; `ResolvedPaths.boardDirPath` is the absolute path `ServerOptions.boardDir` requires.
-  `resolvePaths` is the single conversion point, so the two can't be swapped silently. It also derives
-  `projectName` from the *repo* basename, never the board dir's — which stays correct when
-  `--board-dir` points elsewhere.
-- **AC-2 is proven end-to-end by ONE temp repo carrying TWO boards** (`docs/cards` with CARD-001/wip 2,
-  `boards/alt` with CARD-777/wip 7). The default run serves the first, `--board-dir boards/alt` serves
-  the second. Hardcoding `docs/cards` reddens it; a single-fixture test could not tell the difference.
-- **`index.ts` stays pure wiring** (parse → resolve → `createServer` → `listen`) because it is the
-  coverage-excluded I/O edge — that is why no flag behaviour lives there.
-- **A shared test harness moves to `test/board-fixture.ts`** (`writeFixtureTree`/`withServer`/
-  `cleanupFixtures`), out of `http-server.test.ts` where it is unreachable by other files. All four
-  sibling cards need it; this is the existing `test/server-guard.ts` pattern, not new infrastructure.
+Design PR **#61** (ADR-0012) merged first; this is the implementation half.
 
-### Acceptance criteria (sharpened)
-- **AC-1 (REQ-012, `docs/spec.md:99-102`)** — with no `--board-dir`, the served board is
-  `<repo>/docs/cards`: `args.boardDir === 'docs/cards'`, `boardDirPath === '<repo>/docs/cards'`, and
-  `GET /api/board` returns the default board's ids and `config.wipLimit`.
-- **AC-2 (REQ-012, `docs/spec.md:99-102`; REQ-010 usage form, `:87-92`)** — `--board-dir <path>` parses
-  *and* the board at that repo-relative path is what gets served: against the two-board fixture,
-  `GET /api/board` returns `['CARD-777']` / `wipLimit 7` and **not** `CARD-001` / `wipLimit 2`.
+### What changed
+| file | |
+|---|---|
+| `src/server/args.ts` | **new**, 108 lines — `parseArgs(argv)` → `{ok:true,args} \| {ok:false,error}`, `resolvePaths(args)`, the five error strings, `USAGE`, `EXIT_USAGE` |
+| `src/server/args.test.ts` | **new**, 285 lines — 23 tests incl. two seeded properties and the two-board end-to-end proof |
+| `test/board-fixture.ts` | **new**, 52 lines — `writeFixtureTree`/`cleanupFixtures`/`withServer`, moved verbatim out of `http-server.test.ts` |
+| `src/server/index.ts` | now pure wiring: parse → resolve → `createServer` → `listen` |
+| `src/server/http-server.test.ts` | imports the shared harness; its 6 tests unchanged in substance |
+| `tsconfig.test.json` | `args.ts` added to `include` (TS6307) |
 
-### ADRs in this PR
-- **ADR-0012 — CLI flags parsed by a hand-rolled pure args module returning a discriminated result.**
-  No runtime dependency (ADR-0002/ADR-0005 keep deps at exactly `{gray-matter}`) and not
-  `node:util.parseArgs`, because four chained cards assert the CLI's error strings verbatim and the
-  error contract needs to be ours and stable across Node versions.
+**463 added lines** against `size_limit` 500.
 
-### Open questions / decisions deferred
-The designer raised none. Two things the design check surfaced that are worth a reviewer's eye:
+### How AC-2 is actually proven
+The card's AC-2 is intake-mandated: the flag must *parse* **and** the board at that path must be
+**served**. A single-fixture test cannot tell a working flag from a hardcoded path — so the proof uses
+**one temp repo holding two boards**, disjoint on two axes:
 
-1. **Size.** The design implies ~410 lines against the card's carve-time `estimated_lines: 130` — a
-   3.2x delta, re-derived independently by the checker with per-file working. It is not scope creep
-   (every task maps to an AC); the carve-time figure priced `args.test.ts` at ~70 with no server-level
-   test, while AC-2 mandates a two-board proof through the real server. `estimated_lines` is
-   deliberately left at 130 so the miss stays visible to `/retro`. ~410 is 18% under `size_limit` 500,
-   but this project has twice run ~2x its design-time figure. If trimming is wanted, the checker named
-   task 4's property pair (~30 lines) as the only work not tied to an AC.
-2. **A user-visible interval inside M2.** Strict rejection means `--port` and `--no-open` — both
-   advertised on REQ-010's own usage line — return `unknown option` and exit 64 until CARD-025/026
-   land, where today's `index.ts` silently ignores them. Deliberate, test-pinned and ADR-recorded;
-   failing loud beats silently serving the wrong port.
+| | default (`docs/cards`) | `--board-dir boards/alt` |
+|---|---|---|
+| card id | `CARD-001` | `CARD-777` |
+| `wipLimit` | 2 | 7 |
 
-The design check verdicted **pass** on all eight `DSG-*` criteria (`DSG-KNOWLEDGE` fails at advisory
-severity, which does not gate: the design doesn't name the `noUncheckedIndexedAccess` dead-branch trap
-that an argv token loop invites). Seven advisories in total ride this PR — see
-`docs/cards/CARD-023-cli-board-dir-flag/design-check.md`. Two of them concerned ADR text that would
-land permanently on `main`, and were applied when routing ADR-0012: an unverifiable Node-stability
-claim was removed, and the "each sibling card is additive" wording was scoped to `args.ts`'s parser
-surface, since CARD-024/025/026 each additionally introduce their own tested module.
+Neither value is `DEFAULT_WIP_LIMIT` (3), so a "config not found, fell back" degradation is
+distinguishable from a wrong-board read. Both fixtures carry real `---` frontmatter fences — without
+them gray-matter returns `{}` and the discriminator silently collapses.
 
-Full design: `docs/cards/CARD-023-cli-board-dir-flag/design.md` (in this diff). Merging this PR
-approves the design and unblocks implementation — the implementation branch is cut from main after
-this merges, and the code arrives as a second PR.
+The recorded mutation (hardcode `DEFAULT_BOARD_DIR` inside `resolvePaths`) reddens it with
+`expected [ 'CARD-001' ] to deeply equal [ 'CARD-777' ]`. That is precisely the mutation a
+single-fixture test would have survived.
 
-🤖 Design delivered via /kanban
+### Verification
+- **Gates**, re-run independently at test phase: lint 0, `tsc -b --noEmit` 0, build 0, **151/151 tests**,
+  coverage `100/98.3/100/100` overall with **`args.ts` at 100 on all four**.
+- **Review: full 8-lens panel, zero blocking findings.** Four lenses verified by *execution* — acceptance
+  ran four mutations and smoked the built CLI; functionality probed the compiled module with hostile
+  argv; tests traced three mutations against the end-to-end pair; security confirmed the loopback bind
+  survived the rewrite.
+- **`index.ts` is coverage-excluded**, so its only evidence is a manual smoke: `--board-dir boards/alt`
+  served `CARD-777`/wip 7, the default served `CARD-001`/wip 2, `projectName` stayed the repo-root
+  basename in both, and both error paths printed usage with exit 64. Reproduced independently in review.
+
+### 14 advisories ride this PR
+Full detail in `docs/cards/CARD-023-cli-board-dir-flag/review.md`. The four worth a reviewer's eye:
+
+1. **`test/board-fixture.ts` has no test, and the design's mutation claim about it is false.** The helper
+   sits outside both `test.include` and coverage's `include`. `design.md` claims "break `withServer`'s
+   cleanup → the suite fails"; it doesn't — `splice(0)` → `slice(0)` leaks every fixture dir with all 151
+   tests green, because `rmSync` is `force: true`. **CARD-024/025/026 all inherit this helper.** Strongest
+   candidate for a follow-up defect card.
+2. **An empty-string positional is accepted.** `parseArgs([''])` returns `ok` and `resolvePaths` maps `''`
+   → `process.cwd()`, so `kanban-flow-viewer "$REPO"` with an unset `REPO` silently serves the *current
+   directory's* board. Matches the approved error contract (which enumerates five strings and omits this),
+   so not a rework item — **routed to CARD-024**, whose REQ-014 validation does *not* close it when the
+   CWD is itself a valid board.
+3. **`CliArgs.boardDir` and `ServerOptions.boardDir` share a name and type**, so a future call site that
+   skips `resolvePaths` would type-check and silently serve a cwd-relative path. Today's single call site
+   is correct; CARD-024/025/026 all re-touch that wiring.
+4. **ADR-0012's "one case per sibling" is optimistic for `--port`** — a value-taking numeric flag needs the
+   shared value-consumption block to branch on which flag is pending, plus a parse-failure mode that block
+   has no slot for. CARD-025's design should budget for it.
+
+Two more point at this card's own records rather than the code: `implement.md` renumbers the design-check
+advisories (so "was advisory 5 actioned?" lands on the wrong line), and its smoke transcript is written in
+a form that never returns when replayed literally. Both are recorded in `review.md`.
+
+🤖 Delivered via /kanban
