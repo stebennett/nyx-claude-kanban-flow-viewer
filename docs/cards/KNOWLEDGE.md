@@ -341,10 +341,35 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
 - [CARD-022] A CRLF-vs-LF regression test must pin a **literal** hardcoded expected value, not only a
   differential compare (`parseX(crlf)` toEqual `parseX(lf)`): the differential alone passes vacuously if a
   bug degrades both sides to the same wrong value (e.g. `[]` on both). Assert the literal parsed array too.
-- [CARD-006] A no-network test guard that spies `net.Socket.prototype.connect` must handle its
-  **polymorphic first arg**: a port number (host in arg 2), an IPC path string (a unix socket — allow),
-  or an options object `{host, port, path}`. Read the host from `arg.host ?? arg.path` for the object
-  form and arg 2 for the number form; treat `undefined`/`''`/`localhost`/`127.0.0.1`/`::1`/
-  `::ffff:127.0.0.1` as loopback. undici (global `fetch`) connects via net sockets, so the spy catches
-  `fetch` too — asserting on the connection TARGET (loopback vs not) catches a GitHub call by remote
-  address without real DNS/network. Design decisions recorded in ADR-0010/ADR-0011.
+- [CARD-006] A no-network test guard that spies `net.Socket.prototype.connect` must handle TWO calling
+  shapes at that interception point (confirmed by direct reproduction, CARD-006 impl): (a) a **direct**
+  `socket.connect(port, host)` / `socket.connect(options)` passes normal spread args — first arg is
+  polymorphic (port number with host in arg 2 / IPC path string — a unix socket, allow / `{host,port,path}`
+  object); BUT (b) `net.connect(...)`/`net.createConnection(...)` — **and undici's global `fetch`, which
+  routes through them** — pre-normalize and call `Socket.prototype.connect` with a **SINGLE array argument**
+  (`[options, callback, Symbol(normalizedArgs)]`), NOT spread. The spy must detect
+  `args.length === 1 && Array.isArray(args[0])` and unwrap `args[0][0]` before reading host/port, or it
+  silently reads an empty options object and never flags a real non-loopback (`fetch`) connection. Treat
+  `undefined`/`''`/`localhost`/`127.0.0.1`/`::1`/`::ffff:127.0.0.1` as loopback; assert on the connection
+  TARGET so a GitHub call is caught by remote address without real DNS/network. Design in ADR-0010/ADR-0011.
+- [CARD-006] `http-server.ts`'s route dispatch reads `req.url` directly, never `req.url ?? ''` — Node's
+  `IncomingMessage.url` is always populated in a real server request handler despite the optional TS type,
+  so a `?? ''` fallback is dead code that permanently costs one uncovered branch against the 90% coverage
+  target for no behavioral benefit.
+- [CARD-006] Testing a `net.Socket.prototype.connect` spy's per-arg-SHAPE branches needs an explicit
+  test per shape, not per outcome: `net.connect(port, host)` (the factory) and `fetch`/undici both
+  normalize to the array-wrapped `[options,cb]` form before `Socket.prototype.connect`, so a test using
+  either NEVER reaches the spy's `typeof first === 'number'` (direct `socket.connect(port, host)`) branch
+  — it stays a surviving mutant, and `test/**` is outside coverage `include` so the gate won't flag it.
+  Hit that branch directly with `new net.Socket().connect(port, host)`. And **fail closed**: a REQ-001
+  guard that maps "no resolvable host" to loopback-allowed is fail-open (an options object with none of
+  host/hostname/path silently passes) — classify shapes into allow/host/unrecognized and BLOCK
+  unrecognized; every real caller (fetch/https) always sets host/hostname/path, so it costs nothing legit.
+- [CARD-006] `index.ts`'s server binds `.listen(PORT, '127.0.0.1', cb)` (loopback), NOT `.listen(PORT, cb)`
+  — the host-less form binds all interfaces (0.0.0.0/::), exposing the read-only board to the LAN while the
+  log claims `http://localhost`. Tests bind `127.0.0.1`; production must match. A `--host` flag is CARD-018's.
+- [CARD-006] When mutation-verifying a **fail-closed** branch's test coverage, mutate the branch's
+  **body/return value** (make it return the permissive outcome), not just its **condition** (make it
+  always fall through): the fail-closed catch-all can mask a condition-only mutant on a "blocks X" test
+  that doesn't assert message content, so a condition mutant looks like it reddens fewer tests than the
+  body mutant the implementer's claim actually describes. Match the mutation to the claim.

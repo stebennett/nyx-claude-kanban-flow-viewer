@@ -22,7 +22,6 @@ _last rendered: 2026-07-20_
 ## Slice
 
 ## Design
-- CARD-006 — Serve the parsed board over HTTP · design · feature/006-serve-board-over-http-design [M2] · design PR #56 open (ADR-0010/0011) — deliver-check ✓ (1 self-fix), awaiting human merge
 
 ## Implement
 
@@ -31,6 +30,7 @@ _last rendered: 2026-07-20_
 ## Review
 
 ## Deliver
+- CARD-006 — Serve the parsed board over HTTP · deliver · feature/006-serve-board-over-http [M2] · split: 2 slices · PR 1/2 #58 open (guard) — deliver-check ✓, awaiting human merge (then slice 2/2)
 
 ## Blocked
 
