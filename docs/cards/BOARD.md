@@ -3,7 +3,7 @@
 _Rendered by `/kanban`. Do not hand-edit below the header._
 
 **WIP / Gates:** wip_limit 3 · slice=auto · design=pr · deliver=auto
-_last rendered: 2026-07-21 · all 3 in-flight cards awaiting human merge (PRs #61 #62 #63); board state in PR #60_
+_last rendered: 2026-07-21 · 3 design PRs merged; implementation in flight_
 
 ## Backlog
 - CARD-024 — CLI startup validation for a missing or non-board directory · backlog [M2]
@@ -25,11 +25,11 @@ _last rendered: 2026-07-21 · all 3 in-flight cards awaiting human merge (PRs #6
 ## Slice
 
 ## Design
-- CARD-023 — CLI --board-dir flag · design · feature/023-cli-board-dir-flag-design [M2] · design PR #61 open (deliver-check pass, CI green) — awaiting merge · ADR-0012
-- CARD-008 — Serve a card's phase docs · design · feature/008-serve-phase-docs-design [M2] · design PR #62 open (deliver-check pass, CI green) — awaiting merge · ADR-0013
-- CARD-027 — SSE endpoint sends the current snapshot on connect · design · feature/027-sse-snapshot-on-connect-design [M2] · design PR #63 open (deliver-check pass, CI green) — awaiting merge · ADR-0014
 
 ## Implement
+- CARD-023 — CLI --board-dir flag · implement · feature/023-cli-board-dir-flag [M2] · design PR #61 merged · ADR-0012
+- CARD-008 — Serve a card's phase docs · implement · feature/008-serve-phase-docs [M2] · design PR #62 merged · ADR-0013 · 1 slice + 1 design rework
+- CARD-027 — SSE endpoint sends the current snapshot on connect · implement · feature/027-sse-snapshot-on-connect [M2] · design PR #63 merged · ADR-0014 · 1 design rework
 
 ## Test
 

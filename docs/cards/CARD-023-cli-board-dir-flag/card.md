@@ -4,11 +4,11 @@ type: feature
 layer: api
 reqs: [REQ-012]
 title: CLI --board-dir flag
-status: design
-phase: design
+status: implement
+phase: implement
 right_sized: true
 depends_on: [CARD-006]
-branch: feature/023-cli-board-dir-flag-design
+branch: feature/023-cli-board-dir-flag
 worktree: .worktrees/CARD-023-cli-board-dir-flag
 design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/61
 pr_urls: []

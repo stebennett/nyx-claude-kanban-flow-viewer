@@ -4,11 +4,11 @@ type: feature
 layer: api
 reqs: [REQ-005, REQ-018, REQ-035]
 title: Serve a card's phase docs
-status: design
-phase: design
+status: implement
+phase: implement
 right_sized: true
 depends_on: [CARD-006]
-branch: feature/008-serve-phase-docs-design
+branch: feature/008-serve-phase-docs
 worktree: .worktrees/CARD-008-serve-phase-docs
 design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/62
 pr_urls: []
