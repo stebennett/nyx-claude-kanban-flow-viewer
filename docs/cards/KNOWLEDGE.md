@@ -463,3 +463,10 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   the eager form also reddens any test whose injected provider throws, because it now throws at
   construction rather than per request, which obscures the claim. The lazy form isolates it — exactly one
   test reddens, the freshness test, while its static-deep-equal twin stays green.
+- [kanban] Re-rendering `BOARD.md` on a phase transition has now produced the same defect three times in
+  one session: the card's status string is updated in place but the bullet is left under its **previous**
+  column heading (Design→Implement, Implement→Test, Test→Review). A phase transition is a **move between
+  two `##` sections**, not an edit to one line — a `sed`/`replace` keyed on the card's text will always
+  update the text and never move it. Do the transition as an explicit delete-from-old-section +
+  insert-into-new-section edit, and **read the rendered section back** before committing: the status word
+  and the heading above it must agree. Two of the three were caught only by reading the file afterwards.
