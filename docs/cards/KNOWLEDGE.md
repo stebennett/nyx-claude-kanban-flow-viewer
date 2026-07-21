@@ -507,3 +507,16 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   for observability) can silently invalidate a row that was true of the designed test. Any row whose
   named test changed shape during implementation belongs in `implement.md`'s Deviations with the re-check
   result.
+- [kanban] **Do not write a factual claim into a durable document without running the command that
+  settles it.** CARD-023 produced three defects of one shape, all in orchestrator-authored prose, all
+  caught downstream rather than at authoring time: (1) "463 added lines against size_limit 500" framed as
+  compliance, written without reading `checks/deliver.md`'s stated `added + deleted` method; (2) "the
+  added-column measure DLV-SIZE used on CARD-019/CARD-021" — a precedent asserted, never verified; (3)
+  "both of those cards had zero deletions" — asserted about two PRs without opening either (CARD-019 has
+  5). Each was *explanatory* prose added while fixing something else, which is the tell: the claim being
+  corrected gets checked, the sentence explaining the correction does not. Cf. `[CARD-006]`, the same
+  pattern in a PR-body self-fix. The mitigation is a command, not more care.
+- [kanban] When dispatching a re-check after a self-fix, **explicitly ask whether the fix introduced a new
+  false claim**, not just whether it cleared the old one. Both times this project has asked (CARD-006,
+  CARD-023) the answer was yes. A self-fix is unreviewed prose written under time pressure by the party
+  whose error is being corrected — it is the least trustworthy text in the card, not the most.
