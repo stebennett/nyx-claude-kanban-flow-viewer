@@ -17,10 +17,10 @@ adrs: [ADR-0010, ADR-0011]
 reworks:
   slice: 0
   design: 0
-  implement: 1
+  implement: 0
   split: 0
   deliver: 0
-review_lenses_failed: [functionality, tests]
+review_lenses_failed: []
 estimated_lines: 313
 actual_lines: 387
 started: 2026-07-20
