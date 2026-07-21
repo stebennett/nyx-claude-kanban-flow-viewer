@@ -13,7 +13,7 @@ worktree: .worktrees/CARD-008-serve-phase-docs
 design_pr_url: ""
 pr_urls: []
 split_slices: 0
-adrs: []
+adrs: [ADR-0013]
 reworks:
   slice: 1
   design: 1

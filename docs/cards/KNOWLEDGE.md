@@ -402,3 +402,15 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   runner, so a `finally` blocked on a never-settling await never runs. Also note per-wait timeout
   budgets **do not compose** — a test chaining N bounded waits can exceed vitest's 5 000 ms default
   `testTimeout` even though every individual wait is under it; give such a test an explicit `{ timeout }`.
+- [CARD-008] A design that re-derives its line budget after a check must attribute each cut to lines
+  **actually removed**, not to a dropped `it` count: per-`it` rate models (e.g. 18.6 lines/`it` from
+  `build-snapshot.test.ts`) make folding two cases into one `it` look like a ~19-line saving when it
+  removes only the ~3-4 lines of `it` boilerplate — the assertions and fixtures move, they don't vanish.
+  Real cuts are deleted fixtures, deleted setup, deleted wrappers (here: deleting a standalone
+  REQ-001-guard `it` in favour of wrapping an existing request is real, ~19 lines, because the guard wrap
+  costs only ~6 — measured against `http-server.test.ts:197-216`).
+- [CARD-008] `src/server/index.ts` is coverage-excluded ([CARD-001]), so any **value** that is chosen only
+  there — `boardDir`, `repoRoot`, port — has no automated proof anywhere in the suite: a required
+  `ServerOptions` field is compiler-enforced for *presence* but never for *correctness*. A design adding
+  one must name a manual smoke (`node dist/server/index.js <repo>` + `curl` the affected route) as that
+  field's evidence, the way CARD-023's design task 7 does.
