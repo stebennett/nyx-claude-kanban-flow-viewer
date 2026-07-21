@@ -30,9 +30,9 @@ _last rendered: 2026-07-21_
 ## Review
 
 ## Deliver
-- CARD-006 — Serve the parsed board over HTTP · deliver · feature/006-serve-board-over-http [M2] · split: 2 slices · PR 1/2 #58 merged (guard) — PR 2/2 #59 open (HTTP server + CLI) · checking deliver
 
 ## Blocked
+- CARD-006 — Serve the parsed board over HTTP · deliver · feature/006-serve-board-over-http [M2] · split: 2 slices · PR 1/2 #58 merged (guard) — PR 2/2 #59 open (HTTP server + CLI) · **blocked: check failed — DLV-BODY-TRUE (self-fix did not clear it)** — PR #59 body prose only; code green, CI green, all other DLV-* pass
 
 ## Done
 - CARD-001 — Scaffold the TypeScript package and toolchain · delivered 2026-07-18 · PRs #1 (design) + #3 · 372 lines · 1 rework [M1]

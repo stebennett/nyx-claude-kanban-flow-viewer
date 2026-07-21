@@ -373,3 +373,10 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   always fall through): the fail-closed catch-all can mask a condition-only mutant on a "blocks X" test
   that doesn't assert message content, so a condition mutant looks like it reddens fewer tests than the
   body mutant the implementer's claim actually describes. Match the mutation to the claim.
+- [CARD-006] A PR-body self-fix for one `DLV-BODY-TRUE` finding can introduce a **new** one in the
+  same edit — re-verify every clause the fix touches against the diff, not just the clause the prior
+  finding named. Here the guard-wrap count (1 wrapped vs 5 not) was corrected accurately, but the
+  added explanatory clause ("the other five inject a snapshot provider") overstated a mechanism true
+  for only 1 of the 5: the other 4 omit `options.snapshot` and run the default `buildSnapshot(options)`
+  path against a disposable `writeFixtureBoard()` tmp dir. Explanatory prose added while fixing is
+  unchecked prose — it needs the same grep-against-the-diff the original claim needed.

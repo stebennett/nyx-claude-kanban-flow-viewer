@@ -4,8 +4,9 @@ type: feature
 layer: api
 reqs: [REQ-001, REQ-006, REQ-010, REQ-016]
 title: Serve the parsed board over HTTP
-status: deliver
+status: blocked
 phase: deliver
+blocker: "check failed — DLV-BODY-TRUE (self-fix did not clear it)"
 right_sized: true
 depends_on: [CARD-022]
 branch: feature/006-serve-board-over-http
