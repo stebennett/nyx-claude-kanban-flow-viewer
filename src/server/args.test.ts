@@ -1,7 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import path from 'node:path';
 import { DEFAULT_BOARD_DIR, EXIT_USAGE, USAGE, parseArgs, resolvePaths } from './args.js';
+import { writeFixtureTree, cleanupFixtures, withServer } from '../../test/board-fixture.js';
+import { assertNoRepoWrites, assertNoNonLoopbackNetwork } from '../../test/server-guard.js';
+
+afterEach(cleanupFixtures);
 
 describe('args module constants', () => {
   it('DEFAULT_BOARD_DIR is docs/cards (REQ-012)', () => {
@@ -172,5 +176,110 @@ describe('resolvePaths', () => {
     const resolved = resolvePaths({ targetRepo: '/tmp/repo', boardDir: '/elsewhere/board' });
 
     expect(resolved.boardDirPath).toBe('/elsewhere/board');
+  });
+});
+
+const DEFAULT_BOARD_CARD = `---
+id: CARD-001
+title: Default board card
+status: backlog
+---
+
+## Why
+Lives at the default docs/cards path.
+`;
+
+const ALT_BOARD_CARD = `---
+id: CARD-777
+title: Alt board card
+status: backlog
+---
+
+## Why
+Lives at the non-default boards/alt path.
+`;
+
+const FIXED = () => new Date('2026-07-21T12:00:00.000Z');
+
+interface BoardBody {
+  projectName: string;
+  cards: { id: string }[];
+  config: { wipLimit: number };
+}
+
+/**
+ * ONE temp repo holding TWO boards with deliberately disjoint contents: a
+ * single-board fixture cannot tell a working --board-dir from a hardcoded
+ * `docs/cards`, so no snapshot value can satisfy both assertions (AC-2).
+ */
+function writeTwoBoardRepo(): string {
+  return writeFixtureTree(
+    {
+      'docs/cards/config.md': '---\nwip_limit: 2\n---\n',
+      'docs/cards/CARD-001-default/card.md': DEFAULT_BOARD_CARD,
+      'boards/alt/config.md': '---\nwip_limit: 7\n---\n',
+      'boards/alt/CARD-777-alt/card.md': ALT_BOARD_CARD,
+    },
+    'kfv-two-board-repo-',
+  );
+}
+
+describe('parseArgs + resolvePaths end to end: the resolved dir is the board that is served', () => {
+  it('serves <repo>/docs/cards when --board-dir is absent', async () => {
+    const repo = writeTwoBoardRepo();
+
+    const parsed = parseArgs([repo]);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    expect(parsed.args.boardDir).toBe('docs/cards');
+    const { boardDirPath, projectName } = resolvePaths(parsed.args);
+
+    await assertNoNonLoopbackNetwork(() =>
+      assertNoRepoWrites(repo, () =>
+        withServer({ boardDir: boardDirPath, projectName, now: FIXED }, async (baseUrl) => {
+          const res = await fetch(`${baseUrl}/api/board`);
+
+          expect(res.status).toBe(200);
+
+          const body = (await res.json()) as BoardBody;
+          const ids = body.cards.map((c) => c.id);
+
+          expect(ids).toEqual(['CARD-001']);
+          expect(ids).not.toContain('CARD-777');
+          expect(body.config.wipLimit).toBe(2);
+        }),
+      ),
+    );
+  });
+
+  it('serves the --board-dir path instead of the default', async () => {
+    const repo = writeTwoBoardRepo();
+
+    const parsed = parseArgs([repo, '--board-dir', 'boards/alt']);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    expect(parsed.args.boardDir).toBe('boards/alt');
+    const { boardDirPath, projectName } = resolvePaths(parsed.args);
+
+    await assertNoNonLoopbackNetwork(() =>
+      assertNoRepoWrites(repo, () =>
+        withServer({ boardDir: boardDirPath, projectName, now: FIXED }, async (baseUrl) => {
+          const res = await fetch(`${baseUrl}/api/board`);
+
+          expect(res.status).toBe(200);
+
+          const body = (await res.json()) as BoardBody;
+          const ids = body.cards.map((c) => c.id);
+
+          expect(ids).toEqual(['CARD-777']);
+          expect(ids).not.toContain('CARD-001');
+          expect(body.config.wipLimit).toBe(7);
+          // --board-dir moves the board, never the project's name.
+          expect(body.projectName).toBe(path.basename(repo));
+        }),
+      ),
+    );
   });
 });
