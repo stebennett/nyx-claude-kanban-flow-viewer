@@ -25,7 +25,7 @@ _last rendered: 2026-07-21_
 ## Slice
 
 ## Design
-- CARD-023 — CLI --board-dir flag · design · feature/023-cli-board-dir-flag-design [M2] · design-check pass · ADR-0012 · opening design PR
+- CARD-023 — CLI --board-dir flag · design · feature/023-cli-board-dir-flag-design [M2] · design PR #61 open · ADR-0012 · checking deliver
 - CARD-008 — Serve a card's phase docs · design · feature/008-serve-phase-docs-design [M2] · checking design · 1 slice rework (kept as one, 460 lines)
 - CARD-027 — SSE endpoint sends the current snapshot on connect · design · feature/027-sse-snapshot-on-connect-design [M2] · checking design
 
