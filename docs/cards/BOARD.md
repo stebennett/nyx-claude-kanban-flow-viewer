@@ -26,8 +26,8 @@ _last rendered: 2026-07-21_
 
 ## Design
 - CARD-023 — CLI --board-dir flag · design · feature/023-cli-board-dir-flag-design [M2] · design PR #61 open (deliver-check pass, CI green) — awaiting merge · ADR-0012
-- CARD-008 — Serve a card's phase docs · design · feature/008-serve-phase-docs-design [M2] · design-check failed DSG-ADR-NEEDED (CARD-023 collision) — reworking, reworks.design 1/2
-- CARD-027 — SSE endpoint sends the current snapshot on connect · design · feature/027-sse-snapshot-on-connect-design [M2] · checking design
+- CARD-008 — Serve a card's phase docs · design · feature/008-serve-phase-docs-design [M2] · re-checking design after rework 1/2 (DSG-ADR-NEEDED)
+- CARD-027 — SSE endpoint sends the current snapshot on connect · design · feature/027-sse-snapshot-on-connect-design [M2] · design-check failed DSG-AC-COVERED (AC2 observable can't detect a cached frame) — reworking, reworks.design 1/2
 
 ## Implement
 

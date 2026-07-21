@@ -380,3 +380,25 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   for only 1 of the 5: the other 4 omit `options.snapshot` and run the default `buildSnapshot(options)`
   path against a disposable `writeFixtureBoard()` tmp dir. Explanatory prose added while fixing is
   unchecked prose — it needs the same grep-against-the-diff the original claim needed.
+- [CARD-027] `server.close(cb)` NEVER fires its callback while an SSE/streaming response is in flight:
+  http's `close()` only closes connections "not sending a request or waiting for a response", and the
+  `'close'` event is not emitted until all connections end — so a `withServer`-style
+  `await new Promise(r => server.close(() => r()))` hangs the whole test file forever on one open
+  stream. Fix is `server.closeAllConnections()` (Node >=18.2) **before** awaiting `close()`. It is NOT
+  a no-op for ordinary request/response tests: it forcibly destroys the idle keep-alive socket undici
+  still holds pooled — harmless only because each test binds a fresh `:0` port, so no later test reuses
+  that origin. Conversely `keepAliveTimeout` (5 s) cannot truncate a stream — it is defined as
+  inactivity *after the last response is written*.
+- [CARD-027] A test that deep-equals a server payload against a directly-computed
+  `buildSnapshot(options)` while pinning `now: FIXED` is **blind to whether the server evaluated the
+  snapshot provider per request or cached it once at construction** — the fixed clock removes
+  `generatedAt`, the only accidental discriminator. Any card asserting that a client receives a
+  *current* (not replayed) snapshot must inject a call-varying provider
+  (`let n = 0; () => ({ ...base, projectName: `p${++n}` })`) and assert successive callers see
+  different values. Determinism and freshness need separate assertions; the deep-equal proves shape,
+  not recomputation.
+- [CARD-027] In vitest, prefer a module-level array of open resources swept by `afterEach` over relying
+  on a helper's `finally` for teardown: a timed-out test's promise chain is no longer awaited by the
+  runner, so a `finally` blocked on a never-settling await never runs. Also note per-wait timeout
+  budgets **do not compose** — a test chaining N bounded waits can exceed vitest's 5 000 ms default
+  `testTimeout` even though every individual wait is under it; give such a test an explicit `{ timeout }`.
