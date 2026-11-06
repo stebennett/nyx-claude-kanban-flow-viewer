@@ -48,3 +48,28 @@ export interface CardModel {
   dirName: string;
   phaseDocsPresent: PhaseDocsPresent;
 }
+
+export interface BoardConfig {
+  wipLimit: number;
+}
+
+export interface ParseError {
+  path: string;
+  error: string;
+}
+
+export interface MilestoneProgress {
+  name: string;
+  cardIds: string[];
+  done: number;
+  total: number;
+}
+
+export interface BoardSnapshot {
+  generatedAt: string;
+  projectName: string;
+  config: BoardConfig;
+  cards: CardModel[];
+  milestones: MilestoneProgress[];
+  parseErrors: ParseError[];
+}

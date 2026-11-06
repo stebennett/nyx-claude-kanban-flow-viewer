@@ -7,7 +7,7 @@ title: Live connection and header
 status: backlog
 phase: backlog
 right_sized: ""
-depends_on: [CARD-009, CARD-007]
+depends_on: [CARD-009, CARD-030]
 branch: ""
 worktree: ""
 design_pr_url: ""

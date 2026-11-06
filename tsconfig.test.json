@@ -11,9 +11,13 @@
   "include": [
     "test/**/*.ts",
     "src/server/**/*.test.ts",
+    "src/server/args.ts",
     "src/server/paths.ts",
     "src/server/card-model.ts",
     "src/server/parse-card.ts",
+    "src/server/build-snapshot.ts",
+    "src/server/milestones.ts",
+    "src/server/http-server.ts",
     "vite.config.ts"
   ]
 }

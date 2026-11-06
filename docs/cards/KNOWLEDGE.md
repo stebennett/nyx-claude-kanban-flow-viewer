@@ -63,6 +63,63 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   test duplicates the impl expression; review confirmed it still catches mutations (it's typed independently,
   not a call-through), but the tag-based style is strictly more robust against a shared authoring error in the
   design's prescribed formula. Prefer tag-based ground truth for the next multi-branch property test.
+- [CARD-003] Secret-bearing GitHub Actions jobs (release.yml's publish) SHA-pin every third-party
+  `uses:` to a full 40-hex commit SHA with a trailing `# vX.Y.Z` comment — never a `@vN` moving tag.
+  Resolve the SHA with `gh api /repos/<owner>/<action>/git/ref/tags/<tag> --jq .object.sha` (deref
+  annotated tags to the commit). The read-only PR-gate `ci.yml` may keep `@v4`; the contract test
+  enforces the SHA shape only on non-local (`uses:` not starting `./`) actions.
+- [CARD-003] `npm publish --provenance` (needs `id-token: write`) requires `repository.url` in
+  package.json or it errors "Provenance generation … requires repository.url". The field points at the
+  git remote `stebennett/nyx-claude-flow-viewer` (NOT the local dir name). Adding it does not break
+  `test/packaging.test.ts` (which never deep-equals the whole package.json — see [CARD-001]).
+- [CARD-003] The release version guard compares `github.ref_name` (the tag, e.g. `v1.2.3`) against
+  `v$(node -p "require('./package.json').version")` and `exit 1`s on mismatch, as the FIRST publish-job
+  step (after checkout, before build/publish) — so a mismatched or un-bumped version publishes nothing.
+  The trigger glob handles shape; the guard handles equality.
+- [CARD-021] `BoardSnapshot`/`BoardConfig`/`ParseError` (the `/api/board` JSON contract) live in the
+  dependency-free `card-model.ts` beside `CardModel` (ADR-0005), NOT in `build-snapshot.ts` (which pulls
+  `fs` + gray-matter) — so the UI can `import type` the API contract without crossing the src/server↔src/ui
+  boundary. CARD-022 adds `milestones` to `BoardSnapshot` additively; CARD-006/007/017 reuse these types.
+- [CARD-021] `parseError.path` is board-dir-relative with a **forward-slash literal** (`` `${dirName}/card.md` ``,
+  `config.md`), never absolute — deterministic across machines and never leaks a tmp/checkout path into the
+  `/api/board` JSON. Build it with a `/` string literal, not `path.join` (OS separator). Assert
+  `not.toContain(boardDir)` in tests.
+- [CARD-021] `DEFAULT_WIP_LIMIT = 3` (matches kanban-init's config default) applies when `config.md` is
+  absent OR `wip_limit` is missing/non-numeric; `wip_limit: 0` passes through (0 ≠ missing). config.md
+  ABSENT degrades silently to the default; config.md MALFORMED routes to `parseErrors('config.md')` + default
+  — the distinction is deliberate (REQ-014 permits a board of only CARD-* dirs). See [[adr-0008]] (the board
+  walk is total).
+- [CARD-021] `buildSnapshot` sorts the `CARD-*` dir list before walking, so `cards`/`parseErrors` come out
+  deterministically ordered (stable client diffing, REQ-009). A `CARD-*` dir missing `card.md` is skipped
+  (not a parseError).
+- [CARD-003] `release.yml`'s intermediate TDD commits (design tasks 3–4) briefly add the version-guard
+  step before the checkout/setup-node steps that make it executable — deliberate increment ordering
+  from the design task list, not a bug; the workflow is only semantically complete (checkout precedes
+  the guard) after task 4's commit.
+- [CARD-021] `readdirSync`'s entry order is NOT guaranteed sorted across filesystems — macOS APFS
+  happened to return `CARD-*` dirs already alphabetical locally, which would make a missing `.sort()`
+  a false green in local dev. The explicit `.sort()` on the dirName list (REQ-009 determinism) must
+  be verified by reasoning about the contract, not just by a locally-green test, on filesystems that
+  preserve insertion order.
+- [CARD-021] fast-check property tests pin an explicit `seed` (see `parse-card.test.ts`'s
+  `{ seed: 20260718, numRuns: N }`) for reproducible CI failures — carry the seed convention forward
+  on every new `fc.assert` call.
+- [CARD-003] Workflow contract tests pin step ORDER via `findIndex` chains (mirroring
+  `test/ci-workflow.test.ts`) for every sequence where reordering silently changes behavior — and the
+  chain must be EXTENDED to include newly-added terminal steps (e.g. a `gh release create` step after
+  `npm publish`), not just the steps present when the order test was first written.
+- [CARD-021] When a module + its own test suite alone would still exceed `size_limit` by a small
+  margin, check whether the PR also adds pure, dependency-free interface types (`card-model.ts`) with
+  zero consumers in the same change — those form a legitimate lead slice (types-only, unused-export,
+  builds/lints/tests green standalone) ordered BEFORE the impl+tests slice, without splitting impl from
+  its tests or shipping a subject-less test file. (CARD-021: 17-line types slice + 490-line impl+tests
+  slice, both green.)
+- [CARD-022] Milestone completion is defined once, in `src/server/milestones.ts`: a milestone's `done`
+  counts referenced cards whose `status === 'done'` (the sole terminal status in the spec's status enum —
+  `split`/`superseded` do NOT count); `total` is the number of card ids listed on the milestone's
+  `**Cards:**` line (not the number that resolved to a parsed card), so a milestone id with no parsed card
+  contributes to `total` but never to `done` and never throws (mirrors ADR-0008). CARD-006 (UI milestone
+  strip) renders these two numbers verbatim and needs no knowledge of the rule.
 
 ## Gotchas
 
@@ -220,3 +277,281 @@ Cross-card knowledge captured by `/kanban` from phase agents. Entries are prefix
   CARD-011, consuming `phaseDocsPresent` for column inference, should avoid a local `const phase = …` that
   shadows/reads as the wrong one (review flagged the overload as advisory; a rename to `{ doc, check }` was
   deferred as it wasn't rework-worthy).
+- [CARD-003] GitHub Actions push-tag filter patterns support `[0-9]` ranges and `+` (one-or-more) and
+  treat `.` as literal, so `'v[0-9]+.[0-9]+.[0-9]+'` fires on `v1.2.3` / `v10.20.30` but NOT on `v1`,
+  `v1.2`, `v1.2.3-rc1`, `v1.2.3.4`, or `latest` (the whole ref must match). This is REQ-037's "other tag
+  shapes do not trigger" enforcement; assert the glob with `toStrictEqual`, since loosening it to `v*`
+  would trigger on `v1`.
+- [CARD-003] KNOWLEDGE [CARD-002]'s rollup-optionalDependencies gotcha still bites any new worktree:
+  after `npm ci` on macOS/ARM, `grep -c 'node_modules/@rollup/rollup-' package-lock.json` must stay
+  ~25. A regenerated lockfile collapsing it to 1 (darwin-arm64 only) breaks `npm run build` (vite)
+  on CI's ubuntu runner ONLY — verify the count before running any test/build step in a fresh card.
+- [CARD-021] gray-matter's `matter()` keeps a module-level cache keyed by the exact input string and
+  populates that entry BEFORE parsing — so a parse that then throws (malformed YAML) leaves a
+  poisoned, empty-data cache entry for that string. A later call with byte-identical content (even
+  from an unrelated card) silently returns the poisoned entry instead of re-throwing. Because
+  `buildSnapshot` re-parses on every debounced walk (REQ-008) in one long-lived process, an UNCHANGED
+  persistently-malformed `card.md` would `parseError` on the first walk but silently "self-heal" with
+  empty defaults on every later walk. Fix: call `matter.clearCache()` before every `matter()`-consuming
+  call (accessed via a narrow local cast — gray-matter's bundled `.d.ts` omits it, like `matter.cache`,
+  per [CARD-019] on why `@types/gray-matter` isn't added). CARD-007 (the SSE watcher, the other
+  repeated caller of the card-parsing path) must heed this if it ever calls `matter()`/`parseCard()`
+  directly rather than through `buildSnapshot`.
+- [CARD-021] `chmod 000` on a dir reliably simulates an unreadable-directory failure (EACCES) for a
+  totality/permission test — works non-root locally and on CI's non-root ubuntu-latest runner, and
+  even a root-run `chmod 000` still blocks directory traversal (the execute-bit search check isn't
+  bypassed by DAC_OVERRIDE when no execute bit is set). Prefer it over mocking `fs`. Restore perms
+  (`chmod 0o755`) in `afterEach` BEFORE `rmSync`'s recursive cleanup, or cleanup can't traverse the
+  locked dir.
+- [CARD-021] A "call X guards scenario Y" regression test is MASKED when its fixture also triggers a
+  sibling code path that calls the same guard: the cache-poisoning test with a `config.md` in its
+  fixture had `readConfig`'s own `clearMatterCache()` cover for the per-card loop's call, so removing
+  either alone still passed. To isolate a guard, the fixture must exclude everything else that happens
+  to invoke it (here: omit `config.md`), and you must verify by deleting ONLY the guard-under-test and
+  seeing the test go red.
+- [CARD-021] `split.md`'s SPL-GREEN evidence must be **pasted command + raw terminal output** per gate
+  (vitest summary banner, tsc/eslint/vite output) for the full-branch bootstrap AND each slice's scratch
+  build — a narrative summary ("npm test 54/54", "lint clean") FAILS split-check even when the numbers
+  are internally consistent. Match the fenced-real-output convention `test.md` already uses.
+- [CARD-021] A trailing slice's PR body citing an earlier slice's `split.md` "cumulative tests" count
+  (e.g. "75 tests") can go stale by the time that slice's PR opens, if an unrelated card merges new tests
+  into `main` in between (here CARD-003's `release-workflow.test.ts`, +15, made the real CI total 90).
+  The deliver-checker should reconcile against the PR's actual CI job log before flagging DLV-BODY-TRUE —
+  a body that accurately cites its source doc's real pasted evidence is not a false claim, even if a
+  later unrelated merge makes the absolute number stale.
+- [CARD-022] Milestone parsing does NOT reuse `parse-card.ts`'s `extractSection` — milestone headings are
+  dynamic (`## M1 — …`, em-dash + digits) and `extractSection` interpolates its heading arg UNESCAPED into
+  a RegExp (the [CARD-019→CARD-020] latent trap). `milestones.ts` scans lines with fixed anchored patterns
+  (`/^##\s+M\d+/` for a heading, `/^\s*\*\*Cards:\*\*/` for the card line, `/CARD-\d+/g` to extract ids) so
+  no user/spec text is ever compiled into a regex. It also imports NO gray-matter and NO fs — pure over its
+  string+cards inputs — keeping it the same dependency-free character as `card-model.ts`.
+- [CARD-022] A fast-check arbitrary that feeds a parser must satisfy that parser's own accept pattern, or the
+  property silently exercises nothing: a milestone-name arbitrary must match `parseMilestones`' heading regex
+  `/^##\s+(M\d+.*)$/` (e.g. `"M1 — fixture"`, not `"M — fixture"` with no digit after `M`) — otherwise
+  `parseMilestones` returns `[]` and `result[0]` is `undefined`, and the property passes vacuously. Caught here
+  as "expected undefined to be defined", shrunk to `cardIds: []`. Generate inputs the code under test accepts.
+- [CARD-022] A line-scanning parser over an **externally-authored** file (one this tool reads from an
+  arbitrary target repo, not one it writes) must split on `/\r\n|\n/`, never a bare `'\n'`: a
+  CRLF-checked-out file (git-for-Windows `core.autocrlf=true`) leaves a trailing `\r` on every line, and
+  no anchored regex ending `$` matches it (`.` excludes `\r`; JS `$` without `m` won't match before it),
+  so the parser silently returns `[]` with no error. `milestones.ts` shipped this bug (all fixtures were
+  LF); the whole-branch review's functionality + tests lenses caught it, fixed in `ed03641`.
+  `parse-card.ts`'s `extractSection` is only *accidentally* CRLF-safe (its trailing `\s*$` absorbs the
+  `\r`) — don't rely on that accident; split on `/\r\n|\n/` explicitly.
+- [CARD-022] A CRLF-vs-LF regression test must pin a **literal** hardcoded expected value, not only a
+  differential compare (`parseX(crlf)` toEqual `parseX(lf)`): the differential alone passes vacuously if a
+  bug degrades both sides to the same wrong value (e.g. `[]` on both). Assert the literal parsed array too.
+- [CARD-006] A no-network test guard that spies `net.Socket.prototype.connect` must handle TWO calling
+  shapes at that interception point (confirmed by direct reproduction, CARD-006 impl): (a) a **direct**
+  `socket.connect(port, host)` / `socket.connect(options)` passes normal spread args — first arg is
+  polymorphic (port number with host in arg 2 / IPC path string — a unix socket, allow / `{host,port,path}`
+  object); BUT (b) `net.connect(...)`/`net.createConnection(...)` — **and undici's global `fetch`, which
+  routes through them** — pre-normalize and call `Socket.prototype.connect` with a **SINGLE array argument**
+  (`[options, callback, Symbol(normalizedArgs)]`), NOT spread. The spy must detect
+  `args.length === 1 && Array.isArray(args[0])` and unwrap `args[0][0]` before reading host/port, or it
+  silently reads an empty options object and never flags a real non-loopback (`fetch`) connection. Treat
+  `undefined`/`''`/`localhost`/`127.0.0.1`/`::1`/`::ffff:127.0.0.1` as loopback; assert on the connection
+  TARGET so a GitHub call is caught by remote address without real DNS/network. Design in ADR-0010/ADR-0011.
+- [CARD-006] `http-server.ts`'s route dispatch reads `req.url` directly, never `req.url ?? ''` — Node's
+  `IncomingMessage.url` is always populated in a real server request handler despite the optional TS type,
+  so a `?? ''` fallback is dead code that permanently costs one uncovered branch against the 90% coverage
+  target for no behavioral benefit.
+- [CARD-006] Testing a `net.Socket.prototype.connect` spy's per-arg-SHAPE branches needs an explicit
+  test per shape, not per outcome: `net.connect(port, host)` (the factory) and `fetch`/undici both
+  normalize to the array-wrapped `[options,cb]` form before `Socket.prototype.connect`, so a test using
+  either NEVER reaches the spy's `typeof first === 'number'` (direct `socket.connect(port, host)`) branch
+  — it stays a surviving mutant, and `test/**` is outside coverage `include` so the gate won't flag it.
+  Hit that branch directly with `new net.Socket().connect(port, host)`. And **fail closed**: a REQ-001
+  guard that maps "no resolvable host" to loopback-allowed is fail-open (an options object with none of
+  host/hostname/path silently passes) — classify shapes into allow/host/unrecognized and BLOCK
+  unrecognized; every real caller (fetch/https) always sets host/hostname/path, so it costs nothing legit.
+- [CARD-006] `index.ts`'s server binds `.listen(PORT, '127.0.0.1', cb)` (loopback), NOT `.listen(PORT, cb)`
+  — the host-less form binds all interfaces (0.0.0.0/::), exposing the read-only board to the LAN while the
+  log claims `http://localhost`. Tests bind `127.0.0.1`; production must match. A `--host` flag is CARD-018's.
+- [CARD-006] When mutation-verifying a **fail-closed** branch's test coverage, mutate the branch's
+  **body/return value** (make it return the permissive outcome), not just its **condition** (make it
+  always fall through): the fail-closed catch-all can mask a condition-only mutant on a "blocks X" test
+  that doesn't assert message content, so a condition mutant looks like it reddens fewer tests than the
+  body mutant the implementer's claim actually describes. Match the mutation to the claim.
+- [CARD-006] A PR-body self-fix for one `DLV-BODY-TRUE` finding can introduce a **new** one in the
+  same edit — re-verify every clause the fix touches against the diff, not just the clause the prior
+  finding named. Here the guard-wrap count (1 wrapped vs 5 not) was corrected accurately, but the
+  added explanatory clause ("the other five inject a snapshot provider") overstated a mechanism true
+  for only 1 of the 5: the other 4 omit `options.snapshot` and run the default `buildSnapshot(options)`
+  path against a disposable `writeFixtureBoard()` tmp dir. Explanatory prose added while fixing is
+  unchecked prose — it needs the same grep-against-the-diff the original claim needed.
+- [CARD-027] `server.close(cb)` NEVER fires its callback while an SSE/streaming response is in flight:
+  http's `close()` only closes connections "not sending a request or waiting for a response", and the
+  `'close'` event is not emitted until all connections end — so a `withServer`-style
+  `await new Promise(r => server.close(() => r()))` hangs the whole test file forever on one open
+  stream. Fix is `server.closeAllConnections()` (Node >=18.2) **before** awaiting `close()`. It is NOT
+  a no-op for ordinary request/response tests: it forcibly destroys the idle keep-alive socket undici
+  still holds pooled — harmless only because each test binds a fresh `:0` port, so no later test reuses
+  that origin. Conversely `keepAliveTimeout` (5 s) cannot truncate a stream — it is defined as
+  inactivity *after the last response is written*.
+- [CARD-027] A test that deep-equals a server payload against a directly-computed
+  `buildSnapshot(options)` while pinning `now: FIXED` is **blind to whether the server evaluated the
+  snapshot provider per request or cached it once at construction** — the fixed clock removes
+  `generatedAt`, the only accidental discriminator. Any card asserting that a client receives a
+  *current* (not replayed) snapshot must inject a call-varying provider
+  (`let n = 0; () => ({ ...base, projectName: `p${++n}` })`) and assert successive callers see
+  different values. Determinism and freshness need separate assertions; the deep-equal proves shape,
+  not recomputation.
+- [CARD-027] In vitest, prefer a module-level array of open resources swept by `afterEach` over relying
+  on a helper's `finally` for teardown: a timed-out test's promise chain is no longer awaited by the
+  runner, so a `finally` blocked on a never-settling await never runs. Also note per-wait timeout
+  budgets **do not compose** — a test chaining N bounded waits can exceed vitest's 5 000 ms default
+  `testTimeout` even though every individual wait is under it; give such a test an explicit `{ timeout }`.
+- [CARD-008] A design that re-derives its line budget after a check must attribute each cut to lines
+  **actually removed**, not to a dropped `it` count: per-`it` rate models (e.g. 18.6 lines/`it` from
+  `build-snapshot.test.ts`) make folding two cases into one `it` look like a ~19-line saving when it
+  removes only the ~3-4 lines of `it` boilerplate — the assertions and fixtures move, they don't vanish.
+  Real cuts are deleted fixtures, deleted setup, deleted wrappers (here: deleting a standalone
+  REQ-001-guard `it` in favour of wrapping an existing request is real, ~19 lines, because the guard wrap
+  costs only ~6 — measured against `http-server.test.ts:197-216`).
+- [CARD-008] `src/server/index.ts` is coverage-excluded ([CARD-001]), so any **value** that is chosen only
+  there — `boardDir`, `repoRoot`, port — has no automated proof anywhere in the suite: a required
+  `ServerOptions` field is compiler-enforced for *presence* but never for *correctness*. A design adding
+  one must name a manual smoke (`node dist/server/index.js <repo>` + `curl` the affected route) as that
+  field's evidence, the way CARD-023's design task 7 does.
+- [CARD-008] When counting real occurrences of a filename pattern to verify a PR-body claim (e.g.
+  "`deliver-check-design.md` is a real filename (N instances)"), count against **`origin/main`**
+  (`git ls-tree -r --name-only origin/main -- docs/cards`), never the primary checkout's working tree —
+  the primary checkout runs the kanban bookkeeping branch, which can be ahead with another card's
+  still-unmerged PR, giving a count one higher than the PR's true base supports.
+- [CARD-027] When two in-flight cards restructure the same request handler's error handling (a
+  branch-scoped `try/catch` vs a hoist to one handler-wide catch), the card that depends on the narrow
+  scoping must not claim a guard test it doesn't have. A 500-contract test whose provider throws
+  **before** `writeHead` does NOT detect a widened catch: with headers unsent, the outer catch emits the
+  same clean 500 and the test stays green. Only a throw *after* `writeHead` exposes
+  ERR_HTTP_HEADERS_SENT, and nothing in an SSE branch throws synchronously there — so the real defence
+  is the merge-order instruction plus the ADR clause. State it that way rather than claiming test cover.
+- [CARD-023] A CLI token walk keeps 100% branch coverage under `noUncheckedIndexedAccess` by iterating
+  **values** (`for (const token of argv)`) and carrying a pending flag in a local
+  (`awaitingValueFor: string | undefined`), rather than looking ahead at `argv[i+1]` — the look-ahead
+  form forces a `?? ''` guard that is an unreachable branch charged against the 90% threshold (the
+  [CARD-019]/[CARD-006] trap). The pending-flag local also carries the flag name into its error message,
+  so `--board-dir requires a value` stays one template as CARD-025/026 add flags.
+- [CARD-023] In an end-to-end test whose point is *which* board gets served, do NOT pre-assert the
+  resolved path (`expect(boardDirPath).toBe(join(repo,'boards/alt'))`) before starting the server: the
+  pre-assert fails FIRST under the very mutation the test exists to catch, so the red evidence reads as a
+  path mismatch instead of the designed `expected [ 'CARD-001' ] to deeply equal [ 'CARD-777' ]`.
+  Observed here. Path shape belongs in the `resolvePaths` units (hand-written literals); the e2e should
+  assert only served content.
+- [CARD-023] The shared server-test harness now lives in `test/board-fixture.ts` —
+  `writeFixtureTree(files, prefix)`, `cleanupFixtures()` (owns the module-level tmp-dir list, call from
+  `afterEach`) and `withServer(options, cb)` (ephemeral `:0` port, closed in `finally`) — moved out of
+  `http-server.test.ts`. Any card needing a real server on a temp board imports it rather than
+  re-declaring; vitest's `test.include` is `test/**/*.test.ts`, so the non-`.test.ts` helper is never
+  collected as a suite. **Cross-card:** KNOWLEDGE [CARD-027]'s `closeAllConnections()` fix must land IN
+  this shared `withServer`, not in a private copy — every server-level suite now shares it.
+- [CARD-027] Node's `server.requestTimeout` does **not** truncate an in-flight SSE response — probed
+  empirically on Node v22.15.0: default is 300000, and with `server.requestTimeout = 200` set before
+  `listen` and the connection held 400 ms, the next bounded read still timed out rather than seeing EOF.
+  It bounds request **receipt** only, so a long-lived production stream needs no `requestTimeout = 0`.
+  Probing it requires inlining `createServer` + `listen`: `withServer` constructs the server internally
+  and never exposes it.
+- [CARD-027] In vitest 3, per-test options go in the **second** argument — `it(name, { timeout: 10_000 },
+  fn)`. The third-argument object form still works but prints "Using an object as a third argument is
+  deprecated. Vitest 4 will throw an error" to stderr on every collect.
+- [CARD-027] `ReadableStreamReadResult<T>` is a DOM lib type and is **not** declared by `@types/node`.
+  Under this repo's `tsconfig.test.json` (`lib: [ES2023]`, `types: [node]`) any test holding a web-stream
+  read promise must derive the type instead — `let pending: ReturnType<typeof reader.read> | null` — or
+  `tsc -b --noEmit` fails with TS2304 while vitest stays green.
+- [CARD-027] When mutation-proving "the value is computed per request, not cached", prefer a **lazy**
+  cache mutant (cache on first request) over an **eager** one (hoist the computation into the factory):
+  the eager form also reddens any test whose injected provider throws, because it now throws at
+  construction rather than per request, which obscures the claim. The lazy form isolates it — exactly one
+  test reddens, the freshness test, while its static-deep-equal twin stays green.
+- [kanban] Re-rendering `BOARD.md` on a phase transition has now produced the same defect three times in
+  one session: the card's status string is updated in place but the bullet is left under its **previous**
+  column heading (Design→Implement, Implement→Test, Test→Review). A phase transition is a **move between
+  two `##` sections**, not an edit to one line — a `sed`/`replace` keyed on the card's text will always
+  update the text and never move it. Do the transition as an explicit delete-from-old-section +
+  insert-into-new-section edit, and **read the rendered section back** before committing: the status word
+  and the heading above it must agree. Two of the three were caught only by reading the file afterwards.
+- [kanban] **Never dispatch a mutation-running reviewer into a worktree that other reviewers are reading
+  concurrently.** CARD-027's review panel ran 8 lenses in parallel against one worktree, and the
+  acceptance/tests lenses were told to run mutation probes and revert. The design lens observed the
+  worktree mid-mutation (`// MUTANT: no catch` uncommitted in `http-server.ts`) and correctly flagged
+  it. Two consequences: any lens reading working-tree files during that window can report a phantom
+  finding, and a lens that reverts is racing every other lens. Either serialise the mutation-running
+  lens, give it its own worktree, or instruct every lens to diff via git objects
+  (`git diff origin/main...<branch>`) and never trust working-tree contents. The design lens did exactly
+  that on its own initiative, which is why its verdict stands.
+- [CARD-027] Closing an SSE connection in tests: call `controller.abort()` **before** `reader.cancel()`.
+  `cancel()` alone is not a guaranteed socket teardown, and once the body stream is closed a later
+  `abort()` is a no-op — the server's `res` stays alive and its `'close'` handler never runs. Swallow the
+  pending read's rejection first (`pending?.catch(() => undefined)`); abort-first is then safe (probed:
+  200 cycles, zero unhandled AbortErrors). The comment justifying cancel-first ("the reverse order
+  surfaces an unhandled AbortError") was wrong — the `.catch()` already covers it.
+- [CARD-027] Server-side SSE unsubscribe latency on loopback is **p50 3 ms / max 9 ms** (200 close
+  cycles). If a `subscriberCount` poll ever burns its whole budget, the teardown did not happen at all —
+  widening the timeout is not the fix, and re-running to green hides a real bug.
+- [CARD-027] `ServerResponse.write()` never throws synchronously for a dead peer: writing to a
+  just-abandoned response returns `true`, writing after its `'close'` returns `false`, and neither emits
+  an uncaught error (probed, Node v22.15.0). So broadcasting to a not-yet-unsubscribed socket is safe; a
+  throwing sink can only be a non-`ServerResponse` `FrameSink`.
+- [kanban] A per-server singleton written `const x = options.x ?? makeX()` can **never** be proven
+  per-server by a test that **injects** `options.x` — injection makes correct code and the per-request
+  mutant indistinguishable, because the injected object is identical on every request. Observing the
+  singleton's *state* proves subscription, not placement. To guard placement make **resolution** the
+  observable: pass a counting accessor (`get x() { reads++; return x; }`) and assert `reads === 1` across
+  N requests. **The spread hazard is the opposite of what it looks like** (corrected on CARD-027's
+  re-review — an earlier version of this entry got it backwards): `createServer({ ...options })` invokes
+  the getter **once at construction** and hands over a plain data property, so `reads === 1` holds whether
+  the singleton is resolved per-server or per-request — the assertion goes **silently vacuous** and the
+  very mutant it exists to catch passes. A comment is not enough. Make it enforceable: declare the
+  accessor **non-enumerable** (`Object.defineProperty(options, 'x', { enumerable: false, get() {…} })`),
+  so any spread drops the property entirely and the accompanying state assertion fails loudly at 0.
+- [kanban] A mutation→break map row must predict the assertion that fires **first**, not the semantically
+  strongest one. CARD-027's double-call mutant was predicted to redden via `expect(calls).toBe(2)`; it
+  actually reddens on an earlier value assertion and `calls` is never read. Order assertions to match the
+  mutation you claim to catch, or expect the red evidence to read differently than the design predicts.
+- [kanban] A design's mutation→break map is a **claim the implementer must re-verify against the test as
+  shipped**, not as specified: a fixture choice made during implementation (e.g. injecting a dependency
+  for observability) can silently invalidate a row that was true of the designed test. Any row whose
+  named test changed shape during implementation belongs in `implement.md`'s Deviations with the re-check
+  result.
+- [kanban] **Do not write a factual claim into a durable document without running the command that
+  settles it.** CARD-023 produced three defects of one shape, all in orchestrator-authored prose, all
+  caught downstream rather than at authoring time: (1) "463 added lines against size_limit 500" framed as
+  compliance, written without reading `checks/deliver.md`'s stated `added + deleted` method; (2) "the
+  added-column measure DLV-SIZE used on CARD-019/CARD-021" — a precedent asserted, never verified; (3)
+  "both of those cards had zero deletions" — asserted about two PRs without opening either (CARD-019 has
+  5). Each was *explanatory* prose added while fixing something else, which is the tell: the claim being
+  corrected gets checked, the sentence explaining the correction does not. Cf. `[CARD-006]`, the same
+  pattern in a PR-body self-fix. The mitigation is a command, not more care.
+- [kanban] When dispatching a re-check after a self-fix, **explicitly ask whether the fix introduced a new
+  false claim**, not just whether it cleared the old one. Both times this project has asked (CARD-006,
+  CARD-023) the answer was yes. A self-fix is unreviewed prose written under time pressure by the party
+  whose error is being corrected — it is the least trustworthy text in the card, not the most.
+- [kanban] **Write markdown phase docs with the Write tool, never a bash heredoc.** A heredoc in this
+  environment silently strips every `#`-prefixed line — a doc written that way arrives with zero markdown
+  headers while every other character survives, so it looks fine in the tool result and is only caught by
+  `grep -c '^#'` on the file afterwards. Measured: two Write-tool docs had 10 and 11 headers intact; a
+  heredoc-written `test.md` had 0. Bullet-only appends (`- [CARD-NNN] …`, as this file uses) are
+  unaffected, which is why KNOWLEDGE.md survived the same treatment. If a heredoc is unavoidable, verify
+  with `grep -c '^#'` before committing.
+- [CARD-027→CARD-029] Two pieces of code ship **unreachable and therefore untested** in CARD-027, both
+  correctly deferred, neither carried on CARD-029's card: (1) `SnapshotHub.publish`'s per-sink
+  `try/catch` — nothing in CARD-027 calls `publish`, so "a dead sink must not abort the broadcast" has no
+  assertion; CARD-029, as first caller, owes the ~8-line pure test (subscribe a throwing `FrameSink` and a
+  recording one, `publish`, assert the recording one still received the frame) or must delete the guard.
+  (2) `openSse`'s `pending` read retention — a `ReadableStreamDefaultReader` **queues** read requests, so
+  an orphaned timed-out read consumes the next chunk and dropping the retention loses the first
+  post-timeout frame. It cannot be exercised in CARD-027 (no path writes a second frame); CARD-029's first
+  timeout-then-resume read is its first real exercise. **Do not "simplify" it away.**
+- [kanban] **N consecutive green runs against a flake reproduced at 1-in-K is weaker evidence than it
+  reads — do the arithmetic before calling a race fixed.** CARD-027: 126 combined green runs against a
+  1-in-45 flake leaves `(44/45)^126` ≈ 6% residual, i.e. ~94% confidence, not proof. A load-dependent race
+  also may not reproduce in an isolated probe (a 350-cycle cancel-first control never stuck), so a clean
+  differential is often unavailable. Accept such a fix on the **mechanism** — here, `controller.abort()`
+  drives undici's connection destroy, and cancel-first makes the later abort a guaranteed no-op — and
+  treat run counts as corroboration only. An `implement.md` that presents the counts as proof overstates.
+- [CARD-027] `ServerResponse.write()` never throws for a dead peer (re-probed, Node v22.15.0): live write
+  → `true`, write to a just-abandoned peer → `true`, write after the server's `'close'` → `false`; no sync
+  throw, no async `'error'`. So `publish`'s per-sink `try/catch` can never fire for a `ServerResponse` —
+  it guards only a non-`ServerResponse` `FrameSink`. **CARD-029 must not read that guard as its
+  dead-client defence**; pruning is owned by `res.on('close', unsubscribe)`, and back-pressure
+  (`write()` returning `false`) is still unhandled and scoped to CARD-029 by `design.md`.

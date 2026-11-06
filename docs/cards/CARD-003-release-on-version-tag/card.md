@@ -4,27 +4,27 @@ type: task
 layer: infra
 reqs: [REQ-007, REQ-037]
 title: Publish npm package and GitHub Release on a vX.Y.Z tag
-status: backlog
-phase: backlog
+status: done
+phase: done
 right_sized: true
 depends_on: [CARD-001, CARD-002]
-branch: ""
-worktree: ""
-design_pr_url: ""
-pr_urls: []
+branch: task/003-release-on-version-tag
+worktree: .worktrees/CARD-003-release-on-version-tag
+design_pr_url: https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/28
+pr_urls: [https://github.com/stebennett/nyx-claude-kanban-flow-viewer/pull/39]
 split_slices: 0
-adrs: []
+adrs: [ADR-0007, ADR-0009]
 reworks:
   slice: 0
   design: 0
-  implement: 0
+  implement: 2
   split: 0
   deliver: 0
 review_lenses_failed: []
 estimated_lines: 110
-actual_lines: ""
-started: ""
-delivered: ""
+actual_lines: 269
+started: 2026-07-18
+delivered: 2026-07-20
 created: 2026-07-17
 ---
 
@@ -49,9 +49,12 @@ CARD-002's gates via `workflow_call` is the default route; duplicating them inli
 `release.yml` requires explicit justification, because the two gate lists can then drift
 and REQ-037 becomes false without any card's criteria failing.
 
-**Manual prerequisite:** publishing needs an `NPM_TOKEN` secret configured on the repo. No
-card can create it. The workflow also needs `permissions: id-token: write` (for provenance)
-and `contents: write` (for the Release).
+**Manual prerequisite:** publishing uses npm **Trusted Publishers** (OIDC) — no `NPM_TOKEN`
+secret. Before the first `vX.Y.Z` tag, a Trusted Publisher must be configured for the package
+on npmjs.com pointing at this repo's `.github/workflows/release.yml`; no card can create it.
+The workflow needs `permissions: id-token: write` (the OIDC publish credential) and
+`contents: write` (for the Release). Auth mechanism reversed on PR #39 review — see ADR-0009
+(supersedes ADR-0007) and `feedback.md`.
 
 `right_sized: true` at intake, so the slice phase is skipped: `estimated_lines: 110` from
 `card-intake-checker` (INT-SIZED) is this card's only pre-code size check. Both design

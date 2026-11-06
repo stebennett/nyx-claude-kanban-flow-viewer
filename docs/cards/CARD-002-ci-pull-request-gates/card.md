@@ -4,8 +4,8 @@ type: task
 layer: infra
 reqs: [REQ-036]
 title: Run lint, typecheck, tests and build on every pull request
-status: deliver
-phase: deliver
+status: done
+phase: done
 right_sized: true
 depends_on: [CARD-001]
 branch: task/002-ci-pull-request-gates
@@ -24,7 +24,7 @@ review_lenses_failed: []
 estimated_lines: 68
 actual_lines: 191
 started: 2026-07-18
-delivered: ""
+delivered: 2026-07-18
 created: 2026-07-17
 ---
 
