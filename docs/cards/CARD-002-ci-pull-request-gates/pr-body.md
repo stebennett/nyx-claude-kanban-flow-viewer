@@ -1,50 +1,63 @@
-## CARD-002 — design: Run lint, typecheck, tests and build on every pull request   [task · infra]
+## CARD-002 — Run lint, typecheck, tests and build on every pull request   [task · infra]
+
+Implementation PR. The design PR (#6) merged; this carries the CI workflow plus its phase docs.
 
 ### Why
 
-Give every pull request an automated pass/fail verdict on the four gates CARD-001 built (lint,
-typecheck, test, build), so a regression is caught before review rather than after merge. It also
-gives kanban-flow's own `card-deliver-checker` a real "CI not red" signal to read — until this
-workflow exists, that check passes by absence.
+Every pull request now gets an automated verdict on the four gates CARD-001 built (lint, typecheck,
+test, build), so a regression is caught before review. It also gives kanban-flow's own
+`card-deliver-checker` a real "CI not red" signal — until this workflow existed, that check passed by
+absence.
 
-### Design summary
+### What changed
 
-- **One reusable workflow** `.github/workflows/ci.yml`, one `gates` job, four sequential named steps
-  after `npm ci` — it runs CARD-001's existing npm scripts, reimplementing no gate.
-- **`on: [pull_request(branches: main), workflow_call]`** — the same gate definition serves PR CI now
-  and CARD-003's release later (via `uses:`), so the two gate lists cannot drift.
-- **Honors CARD-001's hard-won constraints:** typecheck is `npm run typecheck` = `tsc -b --noEmit`
-  (never raw `tsc` — ADR-0003's false green); CI caches **only** `~/.npm` and **no build state at all**,
-  so the stale-`.tsbuildinfo` false green (a build gate green while building nothing) is structurally
-  impossible in CI.
-- **Each gate is independently falsifiable** by a gate-isolated seed proven to trip exactly one gate
-  (e.g. an *exported* mistyped const stays lint-green — no type-aware lint rule — while going
-  typecheck-red). A Vitest contract test pins the workflow's structure, including the no-build-state-cache
-  rule, with literal-value assertions.
+- **`.github/workflows/ci.yml`** — one reusable workflow, `on: [pull_request(branches: [main]),
+  workflow_call]`, `permissions: contents: read`, a single Node 20 ubuntu `gates` job. Steps:
+  `npm ci → npm run lint → npm run typecheck → npm run build → npm test`.
+- **`test/ci-workflow.test.ts`** — parses `ci.yml` with js-yaml and pins the contract with **literal**
+  assertions: trigger + `workflow_call`, the ordered step list, `tsc -b --noEmit` (never raw
+  `tsc --noEmit`), no `npm install`, `cache: npm` on node 20, **no `actions/cache`/build-state cache**,
+  `permissions: contents: read`. Each assertion is mutation-verified.
+- `js-yaml` + `@types/js-yaml` added as devDependencies (the contract test's parser).
 
-### Acceptance criteria (sharpened)
+### The one non-obvious decision: build runs *before* test
 
-- **AC-1** — triggers on `pull_request` with `branches: [main]`, and is callable via `workflow_call`. (REQ-036)
-- **AC-2** — a green run executes, in order, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` after `npm ci`. (REQ-036)
-- **AC-3** — a PR with only a lint / type / test / build failure reports a red check at that gate; each independently falsifiable. (REQ-036)
-- **AC-4** — install is `npm ci` against the committed lockfile; setup-node `cache: npm`; no `actions/cache` for `dist/` or `*.tsbuildinfo`. (REQ-036)
+`test/packaging.test.ts` (from CARD-001) shells out to `npm run build` to verify the published tarball,
+so the **test gate depends on the build gate**. The design originally ordered test→build; that would
+make a build-only breakage surface as a red *test* step, misattributing the gate. This PR runs
+**build before test** — the correct dependency order — so a broken build fails at the build step and
+each gate stays independently falsifiable (AC-3). The `buildIndex < testIndex` invariant is guarded by
+a mutation-verified assertion, and an inline comment explains it so no one "fixes" it back.
 
-### ADRs in this PR
+**ADR change:** this reorder means **ADR-0006 supersedes ADR-0004** (which stated the old order). Both
+are in this diff; ADR-0004 is marked Superseded. ADR-0004's substance (one reusable workflow, no
+build-state caching, `workflow_call` reuse) is carried forward unchanged.
 
-- **ADR-0004** — CI gates run as a single reusable workflow, with no build-state caching.
+### Acceptance criteria
 
-### Open questions / decisions deferred
+- [x] A workflow triggers on `pull_request` targeting main (and is `workflow_call`-reusable) (REQ-036)
+- [x] It runs lint, typecheck, build, test as gates after `npm ci` (REQ-036)
+- [x] A PR with only a lint / type / test / broken-build error reports a red check at that gate (REQ-036)
+- [x] Install is `npm ci` against the committed lockfile; no build-state caching (REQ-036)
 
-None open. The design check passed with **no blocking findings** and two advisories (carried in
-`design-check.md` in this diff): an unsanctioned `concurrency` block (idiomatic CI hygiene — keep or
-drop), and design.md exceeding the ≤150-line advisory budget.
+### Testing
 
-Note (carried from CARD-001, ADR-0003): `docs/spec.md` REQ-036 still names `tsc --noEmit`; the CI step
-calls the `npm run typecheck` script (`tsc -b --noEmit`), so the ADR governs. The spec prose is slated
-for a `/requirement` amendment.
+All gates green on a clean tree: lint 0, typecheck 0, build 0, **18/18 tests**, 100% coverage on the
+core-logic layer. Each of the four gates was proven to go red independently via gate-isolation seeds
+(recorded in `implement.md`); the three named regressions (raw `tsc --noEmit`, test-before-build,
+`actions/cache` for `*.tsbuildinfo`) were independently re-verified red by the test lens.
 
-Full design: `docs/cards/CARD-002-ci-pull-request-gates/design.md` (in this diff). Merging this PR
-approves the design; the implementation branch is cut from main after merge and the workflow arrives as
-a second PR.
+### Review
 
-🤖 Design delivered via /kanban
+Full 8-lens panel, **no blocking findings**. Multiple lenses verified the build-before-test reorder is
+correct (not just documented) and independently proposed the superseding ADR-0006, which is included.
+Advisories carried in `review.md`: add a `continue-on-error` guard to the contract test (a residual
+false-green vector); SHA-pin actions when CARD-003 adds secrets; the `concurrency` block is unsanctioned
+but harmless. `CLAUDE.md` is noted stale (edit-protected).
+
+### Knowledge
+
+`KNOWLEDGE.md` gained: the packaging-test build/test coupling and its gate-order consequence; js-yaml's
+`on:`-key handling; the CARD-003 SHA-pin note. ADR-0006 (build-before-test) supersedes ADR-0004.
+
+🤖 Card delivered via /kanban

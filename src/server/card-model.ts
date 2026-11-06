@@ -11,6 +11,16 @@ export interface CriteriaCount {
   total: number;
 }
 
+export const PHASE_NAMES = ['slice', 'design', 'implement', 'test', 'review', 'deliver'] as const;
+export type PhaseName = (typeof PHASE_NAMES)[number];
+
+export interface PhaseDocPresence {
+  phase: boolean;
+  check: boolean;
+}
+
+export type PhaseDocsPresent = { [P in PhaseName]: PhaseDocPresence };
+
 export interface CardModel {
   id: string;
   title: string;
@@ -36,4 +46,30 @@ export interface CardModel {
   started: string;
   delivered: string;
   dirName: string;
+  phaseDocsPresent: PhaseDocsPresent;
+}
+
+export interface BoardConfig {
+  wipLimit: number;
+}
+
+export interface ParseError {
+  path: string;
+  error: string;
+}
+
+export interface MilestoneProgress {
+  name: string;
+  cardIds: string[];
+  done: number;
+  total: number;
+}
+
+export interface BoardSnapshot {
+  generatedAt: string;
+  projectName: string;
+  config: BoardConfig;
+  cards: CardModel[];
+  milestones: MilestoneProgress[];
+  parseErrors: ParseError[];
 }
